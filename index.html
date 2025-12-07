@@ -297,13 +297,26 @@
             }
         }
 
+        // 在 <script> 標籤內找到 renderList 函式並替換
+
         function renderList(data) {
-            if (data.length === 0) {
-                recordList.innerHTML = '<p class="text-center text-gray-500 text-sm py-2">尚無資料</p>';
+            // 1. 取得今天的日期字串 (格式如: "Fri Dec 08 2023")
+            const todayStr = new Date().toDateString();
+
+            // 2. 進行篩選：只保留 Timestamp 轉換後跟今天日期一樣的資料
+            const todayData = data.filter(item => {
+                const itemDate = new Date(item.timestamp).toDateString();
+                return itemDate === todayStr;
+            });
+
+            // 3. 如果篩選完沒有資料
+            if (todayData.length === 0) {
+                recordList.innerHTML = '<p class="text-center text-gray-500 text-sm py-2">今日尚無打卡紀錄</p>';
                 return;
             }
 
-            const html = data.map(item => {
+            // 4. 使用篩選後的 todayData 來產生 HTML
+            const html = todayData.map(item => {
                 const dateObj = new Date(item.timestamp);
                 const timeStr = dateObj.toLocaleTimeString('zh-TW', {hour: '2-digit', minute:'2-digit'});
                 
