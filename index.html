@@ -59,10 +59,10 @@
                     <select class="shadow border rounded w-full py-3 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" 
                             id="voicePart" required>
                         <option value="" disabled selected>請選擇聲部</option>
-                        <option value="Soprano">Soprano (女高音)</option>
-                        <option value="Alto">Alto (女低音)</option>
-                        <option value="Tenor">Tenor (男高音)</option>
-                        <option value="Bass">Bass (男低音)</option>
+                        <option value="T1">T1 </option>
+                        <option value="T2">T2</option>
+                        <option value="B1">B1</option>
+                        <option value="B2">B2</option>
                         <option value="Conductor">Conductor (指揮/伴奏)</option>
                     </select>
                 </div>
@@ -147,8 +147,8 @@
         
         // Target Location (Example: National Concert Hall, Taipei)
         // You can get these coordinates from Google Maps (Right click -> Copy numbers)
-        const TARGET_LAT = 25.04836287630437;
-        const TARGET_LNG = 121.52783894008738;
+        const TARGET_LAT = 25.08688947923797,;
+        const TARGET_LNG =  121.59076285326738;
         const MAX_DISTANCE_METERS = 300; // Allowed radius in meters
 
         // DOM Elements
