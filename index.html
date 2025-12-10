@@ -42,22 +42,13 @@
         <div class="p-6">
             <form id="attendanceForm" class="space-y-4">
                 
-                <!-- Name Input -->
-                <div>
-                    <label class="block text-gray-700 text-sm font-bold mb-2" for="name">
-                        姓名
-                    </label>
-                    <input class="shadow appearance-none border rounded w-full py-3 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                           id="name" type="text" placeholder="請輸入你的花名" required>
-                </div>
-
-                <!-- Voice Part Select -->
+                <!-- 1. Voice Part Select (優先選擇) -->
                 <div>
                     <label class="block text-gray-700 text-sm font-bold mb-2" for="voicePart">
-                        聲部
+                        聲部 (請先選擇)
                     </label>
                     <select class="shadow border rounded w-full py-3 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" 
-                            id="voicePart" required>
+                            id="voicePart" required onchange="handleVoicePartChange()">
                         <option value="" disabled selected>請選擇聲部</option>
                         <option value="T1">T1 </option>
                         <option value="T2">T2</option>
@@ -67,11 +58,29 @@
                     </select>
                 </div>
 
-                <!-- Status Select -->
+                <!-- 2. Name Selection (Dynamic) -->
                 <div>
-                    <label class="block text-gray-700 text-sm font-bold mb-2" for="status">
-                        出席狀態
+                    <label class="block text-gray-700 text-sm font-bold mb-2">
+                        姓名
                     </label>
+                    
+                    <!-- 狀態A: 下拉選單 -->
+                    <select id="nameSelect" class="shadow border rounded w-full py-3 px-3 text-gray-700 mb-2 bg-white disabled:bg-gray-100" 
+                            onchange="handleNameSelectChange()" disabled>
+                        <option value="" selected>請先選擇聲部...</option>
+                    </select>
+
+                    <!-- 狀態B: 手動輸入框 (預設隱藏) -->
+                    <div id="manualNameContainer" class="hidden">
+                        <input class="shadow appearance-none border rounded w-full py-3 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-green-500 border-green-500" 
+                               id="manualNameInput" type="text" placeholder="請輸入您的花名">
+                        <p class="text-xs text-green-600 mt-1">* 您選擇了手動輸入，請填寫姓名</p>
+                    </div>
+                </div>
+
+                <!-- 3. Status Select -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2">出席狀態</label>
                     <div class="grid grid-cols-3 gap-2">
                         <label class="cursor-pointer">
                             <input type="radio" name="status" value="出席" class="peer sr-only" required onchange="handleStatusChange()">
@@ -97,20 +106,18 @@
                     </div>
                 </div>
 
-                <!-- GPS Status Info (Only visible for 'Present') -->
+                <!-- GPS Info -->
                 <div id="gpsInfo" class="hidden text-sm text-gray-600 bg-gray-100 p-3 rounded">
-                    <p><i class="fas fa-location-arrow mr-1"></i> 距離目標地點: <span id="distanceValue" class="font-mono">計算中...</span></p>
-                    <p class="text-xs text-gray-500 mt-1">必須在 <span id="maxDistanceDisplay"></span> 公尺內才能打卡出席。</p>
+                    <p><i class="fas fa-location-arrow mr-1"></i> 距離: <span id="distanceValue" class="font-mono">計算中...</span></p>
+                    <p class="text-xs text-gray-500 mt-1">需在 <span id="maxDistanceDisplay"></span>m 內。</p>
                 </div>
 
-                <!-- Submit Button -->
                 <button type="submit" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded focus:outline-none focus:shadow-outline transition duration-200 flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed">
-                    <span id="btnText">送出打卡</span>
+                    <span id="btnText">載入資料中...</span>
                 </button>
             </form>
         </div>
 
-        <!-- Real-time List Section -->
         <div class="border-t border-gray-200 bg-gray-50 p-6">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-lg font-bold text-gray-800">今日紀錄</h2>
@@ -118,18 +125,12 @@
             </div>
             
             <div id="loadingList" class="text-center py-4 hidden">
-                <div class="loader border-gray-300 border-t-blue-600"></div>
-                <span class="ml-2 text-gray-500 text-sm">載入中...</span>
+                <div class="loader border-gray-300 border-t-blue-600"></div><span class="ml-2 text-gray-500 text-sm">載入中...</span>
             </div>
 
             <div id="recordList" class="space-y-3 max-h-64 overflow-y-auto">
-                <!-- Records will be injected here via JS -->
-                <p class="text-center text-gray-500 text-sm py-2">尚無資料</p>
+                <p class="text-center text-gray-500 text-sm py-2">初始化中...</p>
             </div>
-        </div>
-
-        <div class="bg-gray-200 p-2 text-center text-xs text-gray-500">
-            Powered by Google Sheets
         </div>
     </div>
 
@@ -153,169 +154,174 @@
 
         // DOM Elements
         const form = document.getElementById('attendanceForm');
-        const gpsInfo = document.getElementById('gpsInfo');
         const submitBtn = document.getElementById('submitBtn');
         const btnText = document.getElementById('btnText');
-        const distanceValue = document.getElementById('distanceValue');
-        const recordList = document.getElementById('recordList');
+        const nameSelect = document.getElementById('nameSelect');
+        const voiceSelect = document.getElementById('voicePart');
+        const manualNameContainer = document.getElementById('manualNameContainer');
+        const manualNameInput = document.getElementById('manualNameInput');
         const notification = document.getElementById('notification');
+        const recordList = document.getElementById('recordList');
+        const gpsInfo = document.getElementById('gpsInfo');
+        const distanceValue = document.getElementById('distanceValue');
 
         document.getElementById('maxDistanceDisplay').textContent = MAX_DISTANCE_METERS;
 
-        // --- GPS LOGIC ---
+        // 全域變數儲存成員名單
+        let globalMembers = [];
 
-        function handleStatusChange() {
-            const status = document.querySelector('input[name="status"]:checked').value;
-            
-            if (status === '出席') {
-                gpsInfo.classList.remove('hidden');
-                submitBtn.disabled = true; // Disable until GPS verified
-                btnText.textContent = "定位中...";
-                checkLocation();
-            } else {
-                gpsInfo.classList.add('hidden');
-                submitBtn.disabled = false;
-                btnText.textContent = "送出打卡";
-            }
-        }
-
-        function checkLocation() {
-            if (!navigator.geolocation) {
-                showNotification("您的瀏覽器不支援 GPS 定位", "error");
-                return;
-            }
-
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const userLat = position.coords.latitude;
-                    const userLng = position.coords.longitude;
-                    const distance = calculateDistance(userLat, userLng, TARGET_LAT, TARGET_LNG);
-                    
-                    distanceValue.textContent = Math.round(distance) + " 公尺";
-
-                    if (distance <= MAX_DISTANCE_METERS) {
-                        submitBtn.disabled = false;
-                        btnText.textContent = "送出打卡";
-                        distanceValue.classList.remove("text-red-600");
-                        distanceValue.classList.add("text-green-600");
-                    } else {
-                        submitBtn.disabled = true;
-                        btnText.textContent = "不在打卡範圍內";
-                        distanceValue.classList.remove("text-green-600");
-                        distanceValue.classList.add("text-red-600");
-                        showNotification(`距離過遠 (${Math.round(distance)}m)，請移動至練習地點`, "error");
-                    }
-                },
-                (error) => {
-                    let msg = "無法取得位置";
-                    if (error.code === 1) msg = "請允許瀏覽器存取位置權限";
-                    showNotification(msg, "error");
-                    btnText.textContent = "定位失敗";
-                },
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-            );
-        }
-
-        // Haversine formula to calculate distance in meters
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371e3; // Earth radius in meters
-            const phi1 = lat1 * Math.PI / 180;
-            const phi2 = lat2 * Math.PI / 180;
-            const deltaPhi = (lat2 - lat1) * Math.PI / 180;
-            const deltaLambda = (lon2 - lon1) * Math.PI / 180;
-
-            const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
-                      Math.cos(phi1) * Math.cos(phi2) *
-                      Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-            return R * c;
-        }
-
-        // --- DATA HANDLING ---
-
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            // Check API URL config
-            if (!API_URL || API_URL.includes("YOUR_")) {
-                showNotification("請先設定 Google Script URL", "error");
-                return;
-            }
-
-            const formData = {
-                name: document.getElementById('name').value,
-                voicePart: document.getElementById('voicePart').value,
-                status: document.querySelector('input[name="status"]:checked').value,
-            };
-
-            // UI Loading state
-            submitBtn.disabled = true;
-            const originalBtnText = btnText.textContent;
-            btnText.innerHTML = '<div class="loader border-white border-t-transparent w-4 h-4 mr-2"></div> 處理中...';
-
-            try {
-                // Use fetch with no-cors mode requires specific backend handling, 
-                // but usually text/plain POST works best with GAS to read body.
-                await fetch(API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify(formData)
-                });
-
-                showNotification("打卡成功！", "success");
-                form.reset();
-                gpsInfo.classList.add('hidden');
-                // Refresh list
-                fetchData();
-
-            } catch (error) {
-                console.error('Error:', error);
-                showNotification("連線失敗，請稍後再試", "error");
-            } finally {
-                submitBtn.disabled = false;
-                btnText.textContent = "送出打卡"; // Reset text
-            }
+        // --- 1. 初始化與資料獲取 ---
+        window.addEventListener('load', () => {
+             if (API_URL && !API_URL.includes("YOUR_")) {
+                 submitBtn.disabled = true; // 資料還沒回來前不能按
+                 fetchData();
+             } else {
+                 showNotification("請設定 API URL", "error");
+             }
         });
 
         async function fetchData() {
-            if (!API_URL || API_URL.includes("YOUR_")) return;
-
             const loadingList = document.getElementById('loadingList');
             loadingList.classList.remove('hidden');
-            recordList.innerHTML = ''; // Clear current list
-
+            
             try {
                 const response = await fetch(API_URL);
                 const data = await response.json();
                 
-                renderList(data);
+                // A. 處理成員名單
+                globalMembers = data.members || [];
+                console.log("Loaded members:", globalMembers.length);
+                
+                // B. 處理今日紀錄
+                renderList(data.records || []);
+
+                // C. 開放按鈕
+                submitBtn.disabled = false;
+                btnText.textContent = "送出打卡";
+                
+                // 如果已經選了聲部，順便更新一下名字列表 (以防重整)
+                if(voiceSelect.value) handleVoicePartChange();
+
             } catch (error) {
-                console.error('Fetch error:', error);
-                recordList.innerHTML = '<p class="text-red-500 text-center text-sm">無法載入資料</p>';
+                console.error('Error:', error);
+                recordList.innerHTML = '<p class="text-red-500 text-center text-sm">連線錯誤</p>';
+                btnText.textContent = "連線失敗";
             } finally {
                 loadingList.classList.add('hidden');
             }
         }
 
-        // 在 <script> 標籤內找到 renderList 函式並替換
+        // --- 2. 聲部與姓名連動邏輯 ---
+        function handleVoicePartChange() {
+            const selectedVoice = voiceSelect.value;
+            nameSelect.innerHTML = '<option value="" selected disabled>請選擇姓名</option>';
+            
+            // 篩選符合該聲部的成員
+            const filteredMembers = globalMembers.filter(m => m.voicePart === selectedVoice);
+            
+            // 填入選項
+            filteredMembers.forEach(m => {
+                const option = document.createElement('option');
+                option.value = m.name;
+                option.textContent = m.name;
+                nameSelect.appendChild(option);
+            });
 
+            // 加入「不在列表」選項
+            const otherOption = document.createElement('option');
+            otherOption.value = "__OTHER__";
+            otherOption.textContent = "✏️ 不在列表中 (手動輸入)";
+            otherOption.style.color = "blue";
+            nameSelect.appendChild(otherOption);
+
+            nameSelect.disabled = false;
+            
+            // 重置手動輸入狀態
+            nameSelect.value = "";
+            handleNameSelectChange();
+        }
+
+        function handleNameSelectChange() {
+            if (nameSelect.value === "__OTHER__") {
+                manualNameContainer.classList.remove('hidden');
+                manualNameInput.required = true;
+                manualNameInput.focus();
+            } else {
+                manualNameContainer.classList.add('hidden');
+                manualNameInput.required = false;
+            }
+        }
+
+        // --- 3. 表單送出處理 ---
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // 決定最終姓名：如果是「不在列表」，就抓 Input 的值；否則抓 Select 的值
+            let finalName = "";
+            if (nameSelect.value === "__OTHER__") {
+                finalName = manualNameInput.value.trim();
+                if (!finalName) {
+                    showNotification("請輸入姓名", "error");
+                    return;
+                }
+            } else {
+                finalName = nameSelect.value;
+                if (!finalName) {
+                    showNotification("請選擇姓名", "error");
+                    return;
+                }
+            }
+
+            // 準備資料
+            const formData = {
+                name: finalName,
+                voicePart: voiceSelect.value,
+                status: document.querySelector('input[name="status"]:checked').value,
+            };
+
+            // 鎖定按鈕
+            submitBtn.disabled = true;
+            btnText.innerHTML = '<div class="loader border-white border-t-transparent w-4 h-4 mr-2"></div> 處理中...';
+
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(formData)
+                });
+                
+                showNotification(`打卡成功：${finalName}`, "success");
+                
+                // 重置表單但保留部分狀態
+                const currentStatus = formData.status;
+                form.reset();
+                gpsInfo.classList.add('hidden');
+                manualNameContainer.classList.add('hidden');
+                nameSelect.innerHTML = '<option value="" selected>請先選擇聲部...</option>';
+                nameSelect.disabled = true;
+                
+                fetchData(); // 重新整理列表
+
+            } catch (error) {
+                showNotification("送出失敗", "error");
+            } finally {
+                submitBtn.disabled = false;
+                btnText.textContent = "送出打卡";
+            }
+        });
+
+        // --- 4. 列表渲染 (今日篩選) ---
         function renderList(data) {
-            // 1. 取得今天的日期字串 (格式如: "Fri Dec 08 2023")
             const todayStr = new Date().toDateString();
-
-            // 2. 進行篩選：只保留 Timestamp 轉換後跟今天日期一樣的資料
             const todayData = data.filter(item => {
                 const itemDate = new Date(item.timestamp).toDateString();
                 return itemDate === todayStr;
             });
 
-            // 3. 如果篩選完沒有資料
             if (todayData.length === 0) {
                 recordList.innerHTML = '<p class="text-center text-gray-500 text-sm py-2">今日尚無打卡紀錄</p>';
                 return;
             }
 
-            // 4. 使用篩選後的 todayData 來產生 HTML
             const html = todayData.map(item => {
                 const dateObj = new Date(item.timestamp);
                 const timeStr = dateObj.toLocaleTimeString('zh-TW', {hour: '2-digit', minute:'2-digit'});
@@ -337,30 +343,56 @@
                     </div>
                 `;
             }).join('');
-
             recordList.innerHTML = html;
         }
 
-        function showNotification(message, type) {
-            notification.textContent = message;
-            notification.className = `p-4 mb-4 text-sm text-center rounded-lg ${
-                type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-            }`;
-            notification.classList.remove('hidden');
-            
-            // Auto hide after 3 seconds
-            setTimeout(() => {
-                notification.classList.add('hidden');
-            }, 3000);
+        // --- 5. GPS & Notification Utils (保持原樣) ---
+        function handleStatusChange() {
+            const status = document.querySelector('input[name="status"]:checked').value;
+            if (status === '出席') {
+                gpsInfo.classList.remove('hidden');
+                submitBtn.disabled = true;
+                btnText.textContent = "定位中...";
+                checkLocation();
+            } else {
+                gpsInfo.classList.add('hidden');
+                submitBtn.disabled = false;
+                btnText.textContent = "送出打卡";
+            }
         }
 
-        // Load data on start
-        window.addEventListener('load', () => {
-             if (API_URL && !API_URL.includes("YOUR_")) {
-                 fetchData();
-             }
-        });
+        function checkLocation() {
+            if (!navigator.geolocation) { showNotification("不支援 GPS", "error"); return; }
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const d = calculateDistance(position.coords.latitude, position.coords.longitude, TARGET_LAT, TARGET_LNG);
+                    distanceValue.textContent = Math.round(d) + " 公尺";
+                    if (d <= MAX_DISTANCE_METERS) {
+                        submitBtn.disabled = false; btnText.textContent = "送出打卡";
+                        distanceValue.classList.replace("text-red-600", "text-green-600");
+                    } else {
+                        submitBtn.disabled = true; btnText.textContent = "不在範圍內";
+                        distanceValue.classList.add("text-red-600");
+                    }
+                },
+                () => { showNotification("無法定位", "error"); btnText.textContent = "定位失敗"; },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        }
 
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371e3; const p1 = lat1 * Math.PI/180; const p2 = lat2 * Math.PI/180;
+            const dp = (lat2-lat1) * Math.PI/180; const dl = (lon2-lon1) * Math.PI/180;
+            const a = Math.sin(dp/2)*Math.sin(dp/2)+Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)*Math.sin(dl/2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+
+        function showNotification(msg, type) {
+            notification.textContent = msg;
+            notification.className = `p-4 mb-4 text-sm text-center rounded-lg ${type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`;
+            notification.classList.remove('hidden');
+            setTimeout(() => notification.classList.add('hidden'), 3000);
+        }
     </script>
 </body>
 </html>
