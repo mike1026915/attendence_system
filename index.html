@@ -8,7 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
+     <style>
         /* Custom loader animation */
         .loader {
             border: 4px solid #f3f3f3;
@@ -39,7 +39,7 @@
             <p class="text-sm opacity-90 mt-2">請開啟 GPS 以進行打卡</p>
         </div>
 
-        <!-- Navigation Tabs (Updated to 3 columns) -->
+        <!-- Navigation Tabs -->
         <div class="flex border-b border-gray-200">
             <button onclick="switchTab('main')" id="tab-main" class="tab-btn w-1/3 py-3 text-center font-bold text-blue-600 border-b-2 border-blue-600 focus:outline-none">
                 <i class="fas fa-check-square mr-1"></i> 打卡
@@ -205,7 +205,7 @@
         <!-- Footer -->
         <div class="bg-gray-100 p-2 text-center text-xs text-gray-500 space-y-0.5 border-t">
           <div>Powered by Google Sheets</div>
-          <div class="text-gray-400">API v3.2 · App v2.0.0</div>
+          <div class="text-gray-400">API v3.0 · App v2.1.0</div>
         </div>
 
     </div>
@@ -312,13 +312,13 @@
                 globalRecords = data.records || [];
                 console.log("Data Loaded. Members:", globalMembers.length, "Records:", globalRecords.length);
                 
-                // Render Main View List
+                // Render Main View List (Logs show all attempts)
                 renderList(globalRecords);
                 
-                // Render Stats View
+                // Render Stats (Unique persons)
                 renderStats(globalRecords);
 
-                // Render Member Status View
+                // Render Member Status (Unique persons)
                 renderMemberStatus(globalMembers, globalRecords);
 
                 // Enable UI
@@ -340,7 +340,19 @@
         // --- 2. Stats Logic ---
         function renderStats(allRecords) {
             const todayStr = new Date().toDateString();
-            const todayRecords = allRecords.filter(item => new Date(item.timestamp).toDateString() === todayStr);
+            
+            // 1. Filter today's records
+            // 2. Sort by timestamp ASC (Oldest -> Newest) to ensure chronological order
+            let todayRecords = allRecords
+                .filter(item => new Date(item.timestamp).toDateString() === todayStr)
+                .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+            // 3. Deduplicate: Keep only the latest record for each person name
+            const uniqueRecordMap = {};
+            todayRecords.forEach(r => {
+                uniqueRecordMap[r.name] = r; // Later records overwrite earlier ones
+            });
+            const uniqueRecords = Object.values(uniqueRecordMap);
 
             const stats = {
                 'T1': { attend: 0, late: 0, leave: 0, total: 0 },
@@ -354,9 +366,11 @@
             let grandTotalLate = 0;
             let grandTotalLeave = 0;
 
-            todayRecords.forEach(record => {
+            uniqueRecords.forEach(record => {
                 const vp = record.voicePart;
                 const status = record.status;
+                
+                // Only count valid voice parts
                 if (stats[vp]) {
                     stats[vp].total++;
                     if (status === '出席') { stats[vp].attend++; grandTotalAttend++; } 
@@ -379,7 +393,7 @@
                 card.innerHTML = `
                     <div class="flex justify-between items-center mb-2 border-b pb-2">
                         <span class="font-bold text-lg text-gray-800 bg-gray-100 px-2 py-0.5 rounded">${vp}</span>
-                        <span class="text-xs text-gray-500">今日紀錄: ${data.total} 筆</span>
+                        <span class="text-xs text-gray-500">今日紀錄: ${data.total} 人</span>
                     </div>
                     <div class="grid grid-cols-3 gap-2 text-center text-sm">
                         <div class="bg-green-50 rounded p-1"><div class="font-bold text-green-700">${data.attend}</div><div class="text-[10px] text-green-600">出席</div></div>
@@ -402,11 +416,15 @@
             const todayStr = new Date().toDateString();
             
             // Map: Name -> Status (for today)
-            // If user checked in multiple times, take the latest one (sorted by fetch)
             const statusMap = {};
-            const todayRecords = allRecords.filter(r => new Date(r.timestamp).toDateString() === todayStr);
             
-            // Process records to find status for each person
+            // 1. Filter today
+            // 2. Sort Oldest -> Newest to ensure we capture the LAST update
+            const todayRecords = allRecords
+                .filter(r => new Date(r.timestamp).toDateString() === todayStr)
+                .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            
+            // 3. Process records: overwrite logic ensures latest status wins
             todayRecords.forEach(r => {
                 statusMap[r.name] = r.status;
             });
@@ -574,6 +592,7 @@
                 return;
             }
             
+            // Sort Descending (Newest first) for display log
             todayData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
             const html = todayData.map(item => {
