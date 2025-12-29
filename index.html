@@ -23,11 +23,15 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        /* Tab transition */
+        .tab-btn {
+            transition: all 0.3s ease;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
 
-    <div class="max-w-md mx-auto bg-white shadow-lg min-h-screen sm:min-h-0 sm:rounded-xl sm:my-8 overflow-hidden">
+    <div class="max-w-md mx-auto bg-white shadow-lg min-h-screen sm:min-h-0 sm:rounded-xl sm:my-8 overflow-hidden flex flex-col">
         
         <!-- Header -->
         <div class="bg-blue-600 p-6 text-white text-center">
@@ -35,106 +39,173 @@
             <p class="text-sm opacity-90 mt-2">請開啟 GPS 以進行打卡</p>
         </div>
 
-        <!-- Notification Area -->
-        <div id="notification" class="hidden p-4 mb-4 text-sm text-center"></div>
-
-        <!-- Form Section -->
-        <div class="p-6">
-            <form id="attendanceForm" class="space-y-4">
-                
-                <!-- 1. Voice Part Select (優先選擇) -->
-                <div>
-                    <label class="block text-gray-700 text-sm font-bold mb-2" for="voicePart">
-                        聲部 (請先選擇)
-                    </label>
-                    <select class="shadow border rounded w-full py-3 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" 
-                            id="voicePart" required onchange="handleVoicePartChange()">
-                        <option value="" disabled selected>請選擇聲部</option>
-                        <option value="T1">T1 </option>
-                        <option value="T2">T2</option>
-                        <option value="B1">B1</option>
-                        <option value="B2">B2</option>
-                        <option value="Conductor">Conductor (指揮/伴奏)</option>
-                    </select>
-                </div>
-
-                <!-- 2. Name Selection (Dynamic) -->
-                <div>
-                    <label class="block text-gray-700 text-sm font-bold mb-2">
-                        姓名
-                    </label>
-                    
-                    <!-- 狀態A: 下拉選單 -->
-                    <select id="nameSelect" class="shadow border rounded w-full py-3 px-3 text-gray-700 mb-2 bg-white disabled:bg-gray-100" 
-                            onchange="handleNameSelectChange()" disabled>
-                        <option value="" selected>請先選擇聲部...</option>
-                    </select>
-
-                    <!-- 狀態B: 手動輸入框 (預設隱藏) -->
-                    <div id="manualNameContainer" class="hidden">
-                        <input class="shadow appearance-none border rounded w-full py-3 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-green-500 border-green-500" 
-                               id="manualNameInput" type="text" placeholder="請輸入您的花名">
-                        <p class="text-xs text-green-600 mt-1">* 您選擇了手動輸入，請填寫姓名</p>
-                    </div>
-                </div>
-
-                <!-- 3. Status Select -->
-                <div>
-                    <label class="block text-gray-700 text-sm font-bold mb-2">出席狀態</label>
-                    <div class="grid grid-cols-3 gap-2">
-                        <label class="cursor-pointer">
-                            <input type="radio" name="status" value="出席" class="peer sr-only" required onchange="handleStatusChange()">
-                            <div class="rounded-md border-2 border-gray-200 p-3 text-center peer-checked:border-green-500 peer-checked:bg-green-50 peer-checked:text-green-700 transition-all hover:bg-gray-50">
-                                <i class="fas fa-check-circle block mb-1 text-xl"></i>
-                                <span class="text-sm font-bold">出席</span>
-                            </div>
-                        </label>
-                        <label class="cursor-pointer">
-                            <input type="radio" name="status" value="晚到" class="peer sr-only" onchange="handleStatusChange()">
-                            <div class="rounded-md border-2 border-gray-200 p-3 text-center peer-checked:border-yellow-500 peer-checked:bg-yellow-50 peer-checked:text-yellow-700 transition-all hover:bg-gray-50">
-                                <i class="fas fa-running block mb-1 text-xl"></i>
-                                <span class="text-sm font-bold">晚到</span>
-                            </div>
-                        </label>
-                        <label class="cursor-pointer">
-                            <input type="radio" name="status" value="請假" class="peer sr-only" onchange="handleStatusChange()">
-                            <div class="rounded-md border-2 border-gray-200 p-3 text-center peer-checked:border-red-500 peer-checked:bg-red-50 peer-checked:text-red-700 transition-all hover:bg-gray-50">
-                                <i class="fas fa-times-circle block mb-1 text-xl"></i>
-                                <span class="text-sm font-bold">請假</span>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- GPS Info -->
-                <div id="gpsInfo" class="hidden text-sm text-gray-600 bg-gray-100 p-3 rounded">
-                    <p><i class="fas fa-location-arrow mr-1"></i> 距離: <span id="distanceValue" class="font-mono">計算中...</span></p>
-                    <p class="text-xs text-gray-500 mt-1">需在 <span id="maxDistanceDisplay"></span>m 內。</p>
-                </div>
-
-                <button type="submit" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded focus:outline-none focus:shadow-outline transition duration-200 flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed">
-                    <span id="btnText">載入資料中...</span>
-                </button>
-            </form>
+        <!-- Navigation Tabs (Updated to 3 columns) -->
+        <div class="flex border-b border-gray-200">
+            <button onclick="switchTab('main')" id="tab-main" class="tab-btn w-1/3 py-3 text-center font-bold text-blue-600 border-b-2 border-blue-600 focus:outline-none">
+                <i class="fas fa-check-square mr-1"></i> 打卡
+            </button>
+            <button onclick="switchTab('stats')" id="tab-stats" class="tab-btn w-1/3 py-3 text-center font-bold text-gray-500 border-b-2 border-transparent focus:outline-none hover:bg-gray-50">
+                <i class="fas fa-chart-pie mr-1"></i> 統計
+            </button>
+            <button onclick="switchTab('list')" id="tab-list" class="tab-btn w-1/3 py-3 text-center font-bold text-gray-500 border-b-2 border-transparent focus:outline-none hover:bg-gray-50">
+                <i class="fas fa-users mr-1"></i> 名單
+            </button>
         </div>
 
-        <div class="border-t border-gray-200 bg-gray-50 p-6">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-bold text-gray-800">今日紀錄</h2>
-                <button onclick="fetchData()" class="text-blue-600 text-sm hover:underline"><i class="fas fa-sync-alt mr-1"></i>重新整理</button>
+        <!-- Notification Area -->
+        <div id="notification" class="hidden p-4 mb-0 text-sm text-center transform transition-all duration-300"></div>
+
+        <!-- VIEW 1: Main Attendance Form -->
+        <div id="mainView" class="flex-1 flex flex-col">
+            <!-- Form Section -->
+            <div class="p-6 pb-2">
+                <form id="attendanceForm" class="space-y-4">
+                    
+                    <!-- 1. Voice Part Select -->
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="voicePart">
+                            聲部 (請先選擇)
+                        </label>
+                        <select class="shadow border rounded w-full py-3 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" 
+                                id="voicePart" required onchange="handleVoicePartChange()">
+                            <option value="" disabled selected>請選擇聲部</option>
+                            <option value="T1">T1</option>
+                            <option value="T2">T2</option>
+                            <option value="B1">B1</option>
+                            <option value="B2">B2</option>
+                            <option value="Conductor">Conductor</option>
+                        </select>
+                    </div>
+
+                    <!-- 2. Name Selection (Dynamic) -->
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2">
+                            姓名
+                        </label>
+                        
+                        <!-- Select Dropdown -->
+                        <select id="nameSelect" class="shadow border rounded w-full py-3 px-3 text-gray-700 mb-2 bg-white disabled:bg-gray-100" 
+                                onchange="handleNameSelectChange()" disabled>
+                            <option value="" selected>請先選擇聲部...</option>
+                        </select>
+
+                        <!-- Manual Input (Hidden by default) -->
+                        <div id="manualNameContainer" class="hidden">
+                            <input class="shadow appearance-none border rounded w-full py-3 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-green-500 border-green-500" 
+                                   id="manualNameInput" type="text" placeholder="請輸入您的花名">
+                            <p class="text-xs text-green-600 mt-1">* 您選擇了手動輸入，請填寫姓名</p>
+                        </div>
+                    </div>
+
+                    <!-- 3. Status Select -->
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2">出席狀態</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="status" value="出席" class="peer sr-only" required onchange="handleStatusChange()">
+                                <div class="rounded-md border-2 border-gray-200 p-3 text-center peer-checked:border-green-500 peer-checked:bg-green-50 peer-checked:text-green-700 transition-all hover:bg-gray-50">
+                                    <i class="fas fa-check-circle block mb-1 text-xl"></i>
+                                    <span class="text-sm font-bold">出席</span>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="status" value="晚到" class="peer sr-only" onchange="handleStatusChange()">
+                                <div class="rounded-md border-2 border-gray-200 p-3 text-center peer-checked:border-yellow-500 peer-checked:bg-yellow-50 peer-checked:text-yellow-700 transition-all hover:bg-gray-50">
+                                    <i class="fas fa-running block mb-1 text-xl"></i>
+                                    <span class="text-sm font-bold">晚到</span>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="status" value="請假" class="peer sr-only" onchange="handleStatusChange()">
+                                <div class="rounded-md border-2 border-gray-200 p-3 text-center peer-checked:border-red-500 peer-checked:bg-red-50 peer-checked:text-red-700 transition-all hover:bg-gray-50">
+                                    <i class="fas fa-times-circle block mb-1 text-xl"></i>
+                                    <span class="text-sm font-bold">請假</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- GPS Info -->
+                    <div id="gpsInfo" class="hidden text-sm text-gray-600 bg-gray-100 p-3 rounded">
+                        <p><i class="fas fa-location-arrow mr-1"></i> 距離: <span id="distanceValue" class="font-mono">計算中...</span></p>
+                        <p class="text-xs text-gray-500 mt-1">需在 <span id="maxDistanceDisplay"></span>m 內。</p>
+                    </div>
+
+                    <button type="submit" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded focus:outline-none focus:shadow-outline transition duration-200 flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed shadow-md">
+                        <span id="btnText">載入資料中...</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Recent Records Section -->
+            <div class="border-t border-gray-200 bg-gray-50 p-6 flex-1">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-gray-800">今日紀錄</h2>
+                    <button onclick="fetchData()" class="text-blue-600 text-sm hover:underline"><i class="fas fa-sync-alt mr-1"></i>重新整理</button>
+                </div>
+                
+                <div id="loadingList" class="text-center py-4 hidden">
+                    <div class="loader border-gray-300 border-t-blue-600"></div><span class="ml-2 text-gray-500 text-sm">載入中...</span>
+                </div>
+
+                <div id="recordList" class="space-y-3 max-h-64 overflow-y-auto pb-4">
+                    <p class="text-center text-gray-500 text-sm py-2">初始化中...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW 2: Statistics Dashboard -->
+        <div id="statsView" class="hidden p-6 bg-gray-50 min-h-[500px]">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-gray-800">聲部出席概況</h2>
+                <span class="text-xs text-gray-500 bg-white px-2 py-1 rounded border" id="statsDate">YYYY-MM-DD</span>
+            </div>
+
+            <!-- Total Summary Card -->
+            <div class="bg-white p-4 rounded-lg shadow-sm mb-6 border-l-4 border-blue-500 flex justify-around text-center">
+                <div>
+                    <div class="text-2xl font-bold text-green-600" id="totalAttend">0</div>
+                    <div class="text-xs text-gray-500">出席</div>
+                </div>
+                <div>
+                    <div class="text-2xl font-bold text-yellow-600" id="totalLate">0</div>
+                    <div class="text-xs text-gray-500">晚到</div>
+                </div>
+                <div>
+                    <div class="text-2xl font-bold text-red-600" id="totalLeave">0</div>
+                    <div class="text-xs text-gray-500">請假</div>
+                </div>
+            </div>
+
+            <!-- Voice Part Grid -->
+            <div id="statsGrid" class="grid grid-cols-1 gap-4">
+                <!-- Stats cards will be injected here via JS -->
             </div>
             
-            <div id="loadingList" class="text-center py-4 hidden">
-                <div class="loader border-gray-300 border-t-blue-600"></div><span class="ml-2 text-gray-500 text-sm">載入中...</span>
-            </div>
-
-            <div id="recordList" class="space-y-3 max-h-64 overflow-y-auto">
-                <p class="text-center text-gray-500 text-sm py-2">初始化中...</p>
+             <div class="mt-8 text-center">
+                <button onclick="fetchData()" class="px-4 py-2 bg-white border border-gray-300 rounded text-gray-600 text-sm hover:bg-gray-100 shadow-sm">
+                    <i class="fas fa-sync-alt mr-1"></i> 更新統計數據
+                </button>
             </div>
         </div>
-        <div class="bg-gray-100 p-2 text-center text-xs text-gray-500 space-y-0.5">
+
+        <!-- VIEW 3: Member List Status (NEW) -->
+        <div id="memberListView" class="hidden p-6 bg-gray-50 min-h-[500px]">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-gray-800">各聲部詳細名單</h2>
+                <button onclick="fetchData()" class="text-blue-600 text-sm hover:underline"><i class="fas fa-sync-alt mr-1"></i>重新整理</button>
+            </div>
+
+            <div id="memberListContainer" class="space-y-6">
+                 <!-- Lists injected here -->
+                 <p class="text-center text-gray-500 text-sm mt-10">載入名單中...</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="bg-gray-100 p-2 text-center text-xs text-gray-500 space-y-0.5 border-t">
           <div>Powered by Google Sheets</div>
-          <div class="text-gray-400">API v3 · App v1.0.0</div>
+          <div class="text-gray-400">API v3.2 · App v1.2.0</div>
         </div>
 
     </div>
@@ -142,22 +213,21 @@
     <script>
         const ENCODED_API_URL = "aHR0cHM6Ly9zY3JpcHQuZ29vZ2xlLmNvbS9tYWNyb3Mvcy9BS2Z5Y2J3enhOWVhvZlFBZnZtUWxUcjBPQm5LbnV0ZDdtcl9RakJ6SHlPOVMzYU90SU92cEg5RzEtaGp0WXlzV2RiRVV1QXQ3QS9leGVj"; 
         
-        // Decode at runtime (This prevents plain text searching, but visible in Network tab)
+        // Decode at runtime
         let API_URL;
         try {
             API_URL = atob(ENCODED_API_URL);
         } catch(e) {
-            console.error("API URL Decode Error: Check if the base64 string is correct.");
+            console.error("API URL Decode Error.");
             API_URL = "";
         }
         
-        // Target Location (Example: National Concert Hall, Taipei)
-        // You can get these coordinates from Google Maps (Right click -> Copy numbers)
+        // --- Configuration ---
         const TARGET_LAT = 25.048372596100723;
         const TARGET_LNG = 121.5279033131007;
-        const MAX_DISTANCE_METERS = 300; // Allowed radius in meters
+        const MAX_DISTANCE_METERS = 300; 
 
-        // DOM Elements
+        // --- DOM Elements ---
         const form = document.getElementById('attendanceForm');
         const submitBtn = document.getElementById('submitBtn');
         const btnText = document.getElementById('btnText');
@@ -169,21 +239,65 @@
         const recordList = document.getElementById('recordList');
         const gpsInfo = document.getElementById('gpsInfo');
         const distanceValue = document.getElementById('distanceValue');
+        
+        // Views
+        const mainView = document.getElementById('mainView');
+        const statsView = document.getElementById('statsView');
+        const memberListView = document.getElementById('memberListView');
+
+        // Tabs
+        const tabMain = document.getElementById('tab-main');
+        const tabStats = document.getElementById('tab-stats');
+        const tabList = document.getElementById('tab-list');
 
         document.getElementById('maxDistanceDisplay').textContent = MAX_DISTANCE_METERS;
 
-        // 全域變數儲存成員名單
+        // Global Data Storage
         let globalMembers = [];
+        let globalRecords = []; // Store records globally for stats calculation
 
-        // --- 1. 初始化與資料獲取 ---
+        // --- 1. Initialization & Fetching ---
         window.addEventListener('load', () => {
              if (API_URL && !API_URL.includes("YOUR_")) {
-                 submitBtn.disabled = true; // 資料還沒回來前不能按
+                 submitBtn.disabled = true;
+                 // Set today's date in stats view
+                 document.getElementById('statsDate').textContent = new Date().toLocaleDateString('zh-TW');
                  fetchData();
              } else {
                  showNotification("請設定 API URL", "error");
              }
         });
+
+        // Tab Switching Logic
+        window.switchTab = function(tabName) {
+            // Hide all views first
+            mainView.classList.add('hidden');
+            statsView.classList.add('hidden');
+            memberListView.classList.add('hidden');
+            
+            // Reset all tabs styles
+            [tabMain, tabStats, tabList].forEach(tab => {
+                tab.classList.remove('text-blue-600', 'border-blue-600');
+                tab.classList.add('text-gray-500', 'border-transparent');
+            });
+
+            // Activate specific view & tab
+            if (tabName === 'main') {
+                mainView.classList.remove('hidden');
+                tabMain.classList.add('text-blue-600', 'border-blue-600');
+                tabMain.classList.remove('text-gray-500', 'border-transparent');
+            } else if (tabName === 'stats') {
+                statsView.classList.remove('hidden');
+                tabStats.classList.add('text-blue-600', 'border-blue-600');
+                tabStats.classList.remove('text-gray-500', 'border-transparent');
+                if(globalRecords.length > 0) renderStats(globalRecords);
+            } else if (tabName === 'list') {
+                memberListView.classList.remove('hidden');
+                tabList.classList.add('text-blue-600', 'border-blue-600');
+                tabList.classList.remove('text-gray-500', 'border-transparent');
+                if(globalMembers.length > 0) renderMemberStatus(globalMembers, globalRecords);
+            }
+        };
 
         async function fetchData() {
             const loadingList = document.getElementById('loadingList');
@@ -193,18 +307,25 @@
                 const response = await fetch(API_URL);
                 const data = await response.json();
                 
-                // A. 處理成員名單
+                // Store globally
                 globalMembers = data.members || [];
-                console.log("Loaded members:", globalMembers.length);
+                globalRecords = data.records || [];
+                console.log("Data Loaded. Members:", globalMembers.length, "Records:", globalRecords.length);
                 
-                // B. 處理今日紀錄
-                renderList(data.records || []);
+                // Render Main View List
+                renderList(globalRecords);
+                
+                // Render Stats View
+                renderStats(globalRecords);
 
-                // C. 開放按鈕
+                // Render Member Status View
+                renderMemberStatus(globalMembers, globalRecords);
+
+                // Enable UI
                 submitBtn.disabled = false;
                 btnText.textContent = "送出打卡";
                 
-                // 如果已經選了聲部，順便更新一下名字列表 (以防重整)
+                // Refresh name select if voice part is already selected
                 if(voiceSelect.value) handleVoicePartChange();
 
             } catch (error) {
@@ -216,37 +337,168 @@
             }
         }
 
-        // --- 2. 聲部與姓名連動邏輯 ---
-        function handleVoicePartChange() {
+        // --- 2. Stats Logic ---
+        function renderStats(allRecords) {
+            const todayStr = new Date().toDateString();
+            const todayRecords = allRecords.filter(item => new Date(item.timestamp).toDateString() === todayStr);
+
+            const stats = {
+                'T1': { attend: 0, late: 0, leave: 0, total: 0 },
+                'T2': { attend: 0, late: 0, leave: 0, total: 0 },
+                'B1': { attend: 0, late: 0, leave: 0, total: 0 },
+                'B2': { attend: 0, late: 0, leave: 0, total: 0 },
+                'Conductor': { attend: 0, late: 0, leave: 0, total: 0 }
+            };
+
+            let grandTotalAttend = 0;
+            let grandTotalLate = 0;
+            let grandTotalLeave = 0;
+
+            todayRecords.forEach(record => {
+                const vp = record.voicePart;
+                const status = record.status;
+                if (stats[vp]) {
+                    stats[vp].total++;
+                    if (status === '出席') { stats[vp].attend++; grandTotalAttend++; } 
+                    else if (status === '晚到') { stats[vp].late++; grandTotalLate++; } 
+                    else if (status === '請假') { stats[vp].leave++; grandTotalLeave++; }
+                }
+            });
+
+            document.getElementById('totalAttend').innerText = grandTotalAttend;
+            document.getElementById('totalLate').innerText = grandTotalLate;
+            document.getElementById('totalLeave').innerText = grandTotalLeave;
+
+            const statsGrid = document.getElementById('statsGrid');
+            statsGrid.innerHTML = ''; 
+
+            ['T1', 'T2', 'B1', 'B2', 'Conductor'].forEach(vp => {
+                const data = stats[vp];
+                const card = document.createElement('div');
+                card.className = "bg-white p-4 rounded-lg shadow-sm border border-gray-100";
+                card.innerHTML = `
+                    <div class="flex justify-between items-center mb-2 border-b pb-2">
+                        <span class="font-bold text-lg text-gray-800 bg-gray-100 px-2 py-0.5 rounded">${vp}</span>
+                        <span class="text-xs text-gray-500">今日紀錄: ${data.total} 筆</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 text-center text-sm">
+                        <div class="bg-green-50 rounded p-1"><div class="font-bold text-green-700">${data.attend}</div><div class="text-[10px] text-green-600">出席</div></div>
+                        <div class="bg-yellow-50 rounded p-1"><div class="font-bold text-yellow-700">${data.late}</div><div class="text-[10px] text-yellow-600">晚到</div></div>
+                        <div class="bg-red-50 rounded p-1"><div class="font-bold text-red-700">${data.leave}</div><div class="text-[10px] text-red-600">請假</div></div>
+                    </div>
+                `;
+                statsGrid.appendChild(card);
+            });
+        }
+
+        // --- 3. Member Status Logic (New Feature) ---
+        function renderMemberStatus(members, allRecords) {
+            const container = document.getElementById('memberListContainer');
+            if (!members || members.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-400">尚無成員名單資料</p>';
+                return;
+            }
+
+            const todayStr = new Date().toDateString();
+            
+            // Map: Name -> Status (for today)
+            // If user checked in multiple times, take the latest one (sorted by fetch)
+            const statusMap = {};
+            const todayRecords = allRecords.filter(r => new Date(r.timestamp).toDateString() === todayStr);
+            
+            // Process records to find status for each person
+            todayRecords.forEach(r => {
+                statusMap[r.name] = r.status;
+            });
+
+            // Group Members by Voice Part
+            const groups = { 'T1': [], 'T2': [], 'B1': [], 'B2': [], 'Conductor': [] };
+            members.forEach(m => {
+                if (groups[m.voicePart]) {
+                    groups[m.voicePart].push(m.name);
+                }
+            });
+
+            let htmlContent = '';
+            
+            // Generate HTML for each group
+            ['T1', 'T2', 'B1', 'B2', 'Conductor'].forEach(vp => {
+                const groupMembers = groups[vp];
+                if (groupMembers.length === 0) return;
+
+                htmlContent += `
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                        <div class="bg-gray-100 px-4 py-2 border-b border-gray-200 font-bold text-gray-700 flex justify-between items-center">
+                            <span>${vp}</span>
+                            <span class="text-xs font-normal text-gray-500">${groupMembers.length} 人</span>
+                        </div>
+                        <div class="divide-y divide-gray-100">
+                `;
+
+                groupMembers.forEach(name => {
+                    const status = statusMap[name];
+                    let iconHtml = '';
+                    let statusText = '';
+                    let rowClass = 'bg-white'; // Default
+
+                    if (status === '出席') {
+                        iconHtml = '<i class="fas fa-check-circle text-green-500 text-lg"></i>';
+                        statusText = '<span class="text-xs text-green-600 font-bold">出席</span>';
+                    } else if (status === '晚到') {
+                        iconHtml = '<i class="fas fa-running text-yellow-500 text-lg"></i>';
+                        statusText = '<span class="text-xs text-yellow-600 font-bold">晚到</span>';
+                    } else if (status === '請假') {
+                        iconHtml = '<i class="fas fa-times-circle text-red-500 text-lg"></i>';
+                        statusText = '<span class="text-xs text-red-600 font-bold">請假</span>';
+                        rowClass = 'bg-red-50 bg-opacity-30';
+                    } else {
+                        // Not checked in
+                        iconHtml = '<div class="w-5 h-5 rounded-full border-2 border-gray-200"></div>';
+                        statusText = '<span class="text-xs text-gray-400">未打卡</span>';
+                    }
+
+                    htmlContent += `
+                        <div class="px-4 py-3 flex justify-between items-center hover:bg-gray-50 transition-colors ${rowClass}">
+                            <span class="text-gray-800 ${status ? 'font-semibold' : ''}">${name}</span>
+                            <div class="flex items-center gap-2 w-20 justify-end">
+                                ${statusText}
+                                ${iconHtml}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                htmlContent += `
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = htmlContent;
+        }
+
+        // --- 4. Form Logic ---
+        window.handleVoicePartChange = function() {
             const selectedVoice = voiceSelect.value;
             nameSelect.innerHTML = '<option value="" selected disabled>請選擇姓名</option>';
-            
-            // 篩選符合該聲部的成員
             const filteredMembers = globalMembers.filter(m => m.voicePart === selectedVoice);
-            
-            // 填入選項
             filteredMembers.forEach(m => {
                 const option = document.createElement('option');
                 option.value = m.name;
                 option.textContent = m.name;
                 nameSelect.appendChild(option);
             });
-
-            // 加入「不在列表」選項
             const otherOption = document.createElement('option');
             otherOption.value = "__OTHER__";
             otherOption.textContent = "✏️ 不在列表中 (手動輸入)";
             otherOption.style.color = "blue";
             nameSelect.appendChild(otherOption);
-
             nameSelect.disabled = false;
-            
-            // 重置手動輸入狀態
             nameSelect.value = "";
             handleNameSelectChange();
         }
 
-        function handleNameSelectChange() {
+        window.handleNameSelectChange = function() {
             if (nameSelect.value === "__OTHER__") {
                 manualNameContainer.classList.remove('hidden');
                 manualNameInput.required = true;
@@ -257,55 +509,50 @@
             }
         }
 
-        // --- 3. 表單送出處理 ---
+        window.handleStatusChange = function() {
+            const status = document.querySelector('input[name="status"]:checked').value;
+            if (status === '出席') {
+                gpsInfo.classList.remove('hidden');
+                submitBtn.disabled = true;
+                btnText.textContent = "定位中...";
+                checkLocation();
+            } else {
+                gpsInfo.classList.add('hidden');
+                submitBtn.disabled = false;
+                btnText.textContent = "送出打卡";
+            }
+        }
+
+        // --- 5. Submit Logic ---
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-
-            // 決定最終姓名：如果是「不在列表」，就抓 Input 的值；否則抓 Select 的值
             let finalName = "";
             if (nameSelect.value === "__OTHER__") {
                 finalName = manualNameInput.value.trim();
-                if (!finalName) {
-                    showNotification("請輸入姓名", "error");
-                    return;
-                }
+                if (!finalName) { showNotification("請輸入姓名", "error"); return; }
             } else {
                 finalName = nameSelect.value;
-                if (!finalName) {
-                    showNotification("請選擇姓名", "error");
-                    return;
-                }
+                if (!finalName) { showNotification("請選擇姓名", "error"); return; }
             }
-
-            // 準備資料
             const formData = {
                 name: finalName,
                 voicePart: voiceSelect.value,
                 status: document.querySelector('input[name="status"]:checked').value,
             };
-
-            // 鎖定按鈕
             submitBtn.disabled = true;
             btnText.innerHTML = '<div class="loader border-white border-t-transparent w-4 h-4 mr-2"></div> 處理中...';
-
             try {
                 await fetch(API_URL, {
                     method: 'POST',
                     body: JSON.stringify(formData)
                 });
-                
                 showNotification(`打卡成功：${finalName}`, "success");
-                
-                // 重置表單但保留部分狀態
-                const currentStatus = formData.status;
                 form.reset();
                 gpsInfo.classList.add('hidden');
                 manualNameContainer.classList.add('hidden');
                 nameSelect.innerHTML = '<option value="" selected>請先選擇聲部...</option>';
                 nameSelect.disabled = true;
-                
-                fetchData(); // 重新整理列表
-
+                fetchData();
             } catch (error) {
                 showNotification("送出失敗", "error");
             } finally {
@@ -314,7 +561,7 @@
             }
         });
 
-        // --- 4. 列表渲染 (今日篩選) ---
+        // --- 6. Render Lists (Main View) ---
         function renderList(data) {
             const todayStr = new Date().toDateString();
             const todayData = data.filter(item => {
@@ -326,6 +573,8 @@
                 recordList.innerHTML = '<p class="text-center text-gray-500 text-sm py-2">今日尚無打卡紀錄</p>';
                 return;
             }
+            
+            todayData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
             const html = todayData.map(item => {
                 const dateObj = new Date(item.timestamp);
@@ -351,21 +600,7 @@
             recordList.innerHTML = html;
         }
 
-        // --- 5. GPS & Notification Utils (保持原樣) ---
-        function handleStatusChange() {
-            const status = document.querySelector('input[name="status"]:checked').value;
-            if (status === '出席') {
-                gpsInfo.classList.remove('hidden');
-                submitBtn.disabled = true;
-                btnText.textContent = "定位中...";
-                checkLocation();
-            } else {
-                gpsInfo.classList.add('hidden');
-                submitBtn.disabled = false;
-                btnText.textContent = "送出打卡";
-            }
-        }
-
+        // --- 7. GPS Utils ---
         function checkLocation() {
             if (!navigator.geolocation) { showNotification("不支援 GPS", "error"); return; }
             navigator.geolocation.getCurrentPosition(
@@ -375,8 +610,12 @@
                     if (d <= MAX_DISTANCE_METERS) {
                         submitBtn.disabled = false; btnText.textContent = "送出打卡";
                         distanceValue.classList.replace("text-red-600", "text-green-600");
+                        distanceValue.classList.remove("text-red-600"); 
+                        distanceValue.classList.add("text-green-600");
                     } else {
                         submitBtn.disabled = true; btnText.textContent = "不在範圍內";
+                        distanceValue.classList.replace("text-green-600", "text-red-600");
+                        distanceValue.classList.remove("text-green-600");
                         distanceValue.classList.add("text-red-600");
                     }
                 },
