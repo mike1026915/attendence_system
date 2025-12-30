@@ -868,26 +868,10 @@
       function checkLocation() {
         if (!navigator.geolocation) {
           if (isFacebookBrowser()) {
-            const shouldOpenExternal = confirm(
-              "偵測到您在 Facebook 內建瀏覽器中開啟。\n\n" +
-                "Facebook 內建瀏覽器可能無法正常使用 GPS 定位功能。\n\n" +
-                "建議您：\n" +
-                "1. 點擊右上角「...」選單\n" +
-                "2. 選擇「在瀏覽器中開啟」\n" +
-                "3. 使用 Chrome 或 Safari 開啟此頁面\n\n" +
-                "是否要查看如何開啟外部瀏覽器的說明？"
+            showNotification(
+              "Facebook 內建瀏覽器可能無法使用 GPS，建議使用外部瀏覽器",
+              "error"
             );
-            if (shouldOpenExternal) {
-              showNotification(
-                "請在 Facebook 中點擊右上角「...」→「在瀏覽器中開啟」",
-                "error"
-              );
-            } else {
-              showNotification(
-                "Facebook 內建瀏覽器可能無法使用 GPS，建議使用外部瀏覽器",
-                "error"
-              );
-            }
             btnText.textContent = "請使用外部瀏覽器";
           } else if (isMobileDevice()) {
             const shouldRequest = confirm(
@@ -945,20 +929,10 @@
                 errorMsg = "定位逾時，Facebook 瀏覽器可能無法正常定位";
               }
 
-              const shouldOpenExternal = confirm(
-                "在 Facebook 內建瀏覽器中，位置權限可能無法正常運作。\n\n" +
-                  "建議您：\n" +
-                  "1. 點擊 Facebook 右上角「...」選單\n" +
-                  "2. 選擇「在瀏覽器中開啟」\n" +
-                  "3. 使用 Chrome 或 Safari 開啟此頁面\n\n" +
-                  "是否要查看如何開啟外部瀏覽器的說明？"
+              showNotification(
+                "請在 Facebook 中點擊右上角「...」→「在瀏覽器中開啟」",
+                "error"
               );
-              if (shouldOpenExternal) {
-                showNotification(
-                  "請在 Facebook 中點擊右上角「...」→「在瀏覽器中開啟」",
-                  "error"
-                );
-              }
 
               showNotification(errorMsg, "error");
               btnText.textContent = "請使用外部瀏覽器";
