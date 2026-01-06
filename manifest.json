@@ -2,7 +2,7 @@
   "name": "合唱團點名打卡系統",
   "short_name": "團練點名",
   "description": "合唱團點名打卡系統 - 使用 GPS 定位進行團練打卡",
-  "start_url": "/",
+  "start_url": "/attendence_system",
   "display": "standalone",
   "background_color": "#2563eb",
   "theme_color": "#2563eb",
@@ -21,7 +21,9 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["productivity", "utilities"],
+  "categories": [
+    "productivity",
+    "utilities"
+  ],
   "lang": "zh-TW"
 }
-

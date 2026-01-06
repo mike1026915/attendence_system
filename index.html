@@ -10,8 +10,8 @@
     />
     <title>合唱團點名打卡系統</title>
     <!-- PWA Manifest -->
-    <link rel="manifest" href="/manifest.json" />
-    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <link rel="manifest" href="./manifest.json" />
+    <link rel="apple-touch-icon" href="./icon-192.png" />
     <!-- Use Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome for Icons -->
@@ -340,6 +340,9 @@
       const TARGET_LNG = 121.5279033131007;
       const MAX_DISTANCE_METERS = 300;
 
+      // Location validation state
+      let isLocationValid = false;
+
       // --- DOM Elements ---
       const form = document.getElementById("attendanceForm");
       const submitBtn = document.getElementById("submitBtn");
@@ -377,7 +380,7 @@
         // Register Service Worker for PWA
         if ("serviceWorker" in navigator) {
           navigator.serviceWorker
-            .register("/sw.js")
+            .register("./sw.js")
             .then((registration) => {
               console.log("Service Worker registered:", registration.scope);
             })
@@ -759,11 +762,13 @@
         if (status === "出席") {
           gpsInfo.classList.remove("hidden");
           submitBtn.disabled = true;
+          isLocationValid = false;
           btnText.textContent = "定位中...";
           checkLocation();
         } else {
           gpsInfo.classList.add("hidden");
           submitBtn.disabled = false;
+          isLocationValid = true;
           btnText.textContent = "送出打卡";
         }
       };
@@ -785,10 +790,24 @@
             return;
           }
         }
+        const status = document.querySelector(
+          'input[name="status"]:checked'
+        ).value;
+
+        // Validate location if status is "出席"
+        if (status === "出席") {
+          if (!isLocationValid) {
+            showNotification("位置驗證失敗，請確認您在打卡範圍內", "error");
+            // Re-check location to update UI
+            checkLocation();
+            return;
+          }
+        }
+
         const formData = {
           name: finalName,
           voicePart: voiceSelect.value,
-          status: document.querySelector('input[name="status"]:checked').value,
+          status: status,
         };
         submitBtn.disabled = true;
         btnText.innerHTML =
@@ -814,6 +833,7 @@
           nameSelect.innerHTML =
             '<option value="" selected>請先選擇聲部...</option>';
           nameSelect.disabled = true;
+          isLocationValid = false;
           fetchData();
         } catch (error) {
           showNotification("送出失敗", "error");
@@ -913,6 +933,7 @@
             showNotification("不支援 GPS", "error");
           }
           submitBtn.disabled = true;
+          isLocationValid = false;
           return;
         }
         navigator.geolocation.getCurrentPosition(
@@ -926,12 +947,14 @@
             distanceValue.textContent = Math.round(d) + " 公尺";
             if (d <= MAX_DISTANCE_METERS) {
               submitBtn.disabled = false;
+              isLocationValid = true;
               btnText.textContent = "送出打卡";
               distanceValue.classList.replace("text-red-600", "text-green-600");
               distanceValue.classList.remove("text-red-600");
               distanceValue.classList.add("text-green-600");
             } else {
               submitBtn.disabled = true;
+              isLocationValid = false;
               btnText.textContent = "不在範圍內";
               distanceValue.classList.replace("text-green-600", "text-red-600");
               distanceValue.classList.remove("text-green-600");
@@ -954,6 +977,7 @@
 
               showNotification(errorMsg, "error");
               btnText.textContent = "請使用外部瀏覽器";
+              isLocationValid = false;
             } else if (isMobileDevice()) {
               let errorMsg = "無法定位";
               if (error.code === error.PERMISSION_DENIED) {
@@ -975,10 +999,12 @@
               showNotification(errorMsg, "error");
               btnText.textContent = "定位失敗";
               submitBtn.disabled = true;
+              isLocationValid = false;
             } else {
               showNotification("無法定位", "error");
               btnText.textContent = "定位失敗";
               submitBtn.disabled = true;
+              isLocationValid = false;
             }
           },
           { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
