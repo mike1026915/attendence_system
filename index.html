@@ -335,6 +335,27 @@
         API_URL = "";
       }
 
+      // --- Security Utilities ---
+      // HTML escape function to prevent XSS
+      function escapeHtml(text) {
+        if (text == null) return "";
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      // Validate voice part against whitelist
+      function validateVoicePart(vp) {
+        const validVoiceParts = ["T1", "T2", "B1", "B2", "Conductor"];
+        return validVoiceParts.includes(vp) ? vp : "";
+      }
+
+      // Validate status against whitelist
+      function validateStatus(status) {
+        const validStatuses = ["出席", "晚到", "請假"];
+        return validStatuses.includes(status) ? status : "";
+      }
+
       // --- Configuration ---
       const TARGET_LAT = 25.048372596100723;
       const TARGET_LNG = 121.5279033131007;
@@ -574,11 +595,11 @@
         let grandTotalLeave = 0;
 
         uniqueRecords.forEach((record) => {
-          const vp = record.voicePart;
-          const status = record.status;
+          const vp = validateVoicePart(record.voicePart);
+          const status = validateStatus(record.status);
 
           // Only count valid voice parts
-          if (stats[vp]) {
+          if (vp && stats[vp]) {
             stats[vp].total++;
             if (status === "出席") {
               stats[vp].attend++;
@@ -593,9 +614,9 @@
           }
         });
 
-        document.getElementById("totalAttend").innerText = grandTotalAttend;
-        document.getElementById("totalLate").innerText = grandTotalLate;
-        document.getElementById("totalLeave").innerText = grandTotalLeave;
+        document.getElementById("totalAttend").textContent = grandTotalAttend;
+        document.getElementById("totalLate").textContent = grandTotalLate;
+        document.getElementById("totalLeave").textContent = grandTotalLeave;
 
         const statsGrid = document.getElementById("statsGrid");
         statsGrid.innerHTML = "";
@@ -605,17 +626,70 @@
           const card = document.createElement("div");
           card.className =
             "bg-white p-4 rounded-lg shadow-sm border border-gray-100";
-          card.innerHTML = `
-                    <div class="flex justify-between items-center mb-2 border-b pb-2">
-                        <span class="font-bold text-lg text-gray-800 bg-gray-100 px-2 py-0.5 rounded">${vp}</span>
-                        <span class="text-xs text-gray-500">今日紀錄: ${data.total} 人</span>
-                    </div>
-                    <div class="grid grid-cols-3 gap-2 text-center text-sm">
-                        <div class="bg-green-50 rounded p-1"><div class="font-bold text-green-700">${data.attend}</div><div class="text-[10px] text-green-600">出席</div></div>
-                        <div class="bg-yellow-50 rounded p-1"><div class="font-bold text-yellow-700">${data.late}</div><div class="text-[10px] text-yellow-600">晚到</div></div>
-                        <div class="bg-red-50 rounded p-1"><div class="font-bold text-red-700">${data.leave}</div><div class="text-[10px] text-red-600">請假</div></div>
-                    </div>
-                `;
+
+          // Header section
+          const headerDiv = document.createElement("div");
+          headerDiv.className =
+            "flex justify-between items-center mb-2 border-b pb-2";
+
+          const vpSpan = document.createElement("span");
+          vpSpan.className =
+            "font-bold text-lg text-gray-800 bg-gray-100 px-2 py-0.5 rounded";
+          vpSpan.textContent = vp;
+
+          const countSpan = document.createElement("span");
+          countSpan.className = "text-xs text-gray-500";
+          countSpan.textContent = `今日紀錄: ${data.total} 人`;
+
+          headerDiv.appendChild(vpSpan);
+          headerDiv.appendChild(countSpan);
+
+          // Stats grid section
+          const gridDiv = document.createElement("div");
+          gridDiv.className = "grid grid-cols-3 gap-2 text-center text-sm";
+
+          // Attend stat
+          const attendDiv = document.createElement("div");
+          attendDiv.className = "bg-green-50 rounded p-1";
+          const attendValue = document.createElement("div");
+          attendValue.className = "font-bold text-green-700";
+          attendValue.textContent = data.attend;
+          const attendLabel = document.createElement("div");
+          attendLabel.className = "text-[10px] text-green-600";
+          attendLabel.textContent = "出席";
+          attendDiv.appendChild(attendValue);
+          attendDiv.appendChild(attendLabel);
+
+          // Late stat
+          const lateDiv = document.createElement("div");
+          lateDiv.className = "bg-yellow-50 rounded p-1";
+          const lateValue = document.createElement("div");
+          lateValue.className = "font-bold text-yellow-700";
+          lateValue.textContent = data.late;
+          const lateLabel = document.createElement("div");
+          lateLabel.className = "text-[10px] text-yellow-600";
+          lateLabel.textContent = "晚到";
+          lateDiv.appendChild(lateValue);
+          lateDiv.appendChild(lateLabel);
+
+          // Leave stat
+          const leaveDiv = document.createElement("div");
+          leaveDiv.className = "bg-red-50 rounded p-1";
+          const leaveValue = document.createElement("div");
+          leaveValue.className = "font-bold text-red-700";
+          leaveValue.textContent = data.leave;
+          const leaveLabel = document.createElement("div");
+          leaveLabel.className = "text-[10px] text-red-600";
+          leaveLabel.textContent = "請假";
+          leaveDiv.appendChild(leaveValue);
+          leaveDiv.appendChild(leaveLabel);
+
+          gridDiv.appendChild(attendDiv);
+          gridDiv.appendChild(lateDiv);
+          gridDiv.appendChild(leaveDiv);
+
+          card.appendChild(headerDiv);
+          card.appendChild(gridDiv);
           statsGrid.appendChild(card);
         });
       }
@@ -623,9 +697,13 @@
       // --- 3. Member Status Logic (New Feature) ---
       function renderMemberStatus(members, allRecords) {
         const container = document.getElementById("memberListContainer");
+        container.innerHTML = "";
+
         if (!members || members.length === 0) {
-          container.innerHTML =
-            '<p class="text-center text-gray-400">尚無成員名單資料</p>';
+          const emptyMsg = document.createElement("p");
+          emptyMsg.className = "text-center text-gray-400";
+          emptyMsg.textContent = "尚無成員名單資料";
+          container.appendChild(emptyMsg);
           return;
         }
 
@@ -642,82 +720,127 @@
 
         // 3. Process records: overwrite logic ensures latest status wins
         todayRecords.forEach((r) => {
-          statusMap[r.name] = r.status;
+          const safeName = escapeHtml(r.name || "");
+          const safeStatus = validateStatus(r.status);
+          if (safeName) {
+            statusMap[safeName] = safeStatus;
+          }
         });
 
         // Group Members by Voice Part
         const groups = { T1: [], T2: [], B1: [], B2: [], Conductor: [] };
         members.forEach((m) => {
-          if (groups[m.voicePart]) {
-            groups[m.voicePart].push(m.name);
+          const validVp = validateVoicePart(m.voicePart);
+          const safeName = escapeHtml(m.name || "");
+          if (validVp && safeName && groups[validVp]) {
+            groups[validVp].push(safeName);
           }
         });
 
-        let htmlContent = "";
-
-        // Generate HTML for each group
+        // Generate DOM for each group
         ["T1", "T2", "B1", "B2", "Conductor"].forEach((vp) => {
           const groupMembers = groups[vp];
           if (groupMembers.length === 0) return;
 
-          htmlContent += `
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                        <div class="bg-gray-100 px-4 py-2 border-b border-gray-200 font-bold text-gray-700 flex justify-between items-center">
-                            <span>${vp}</span>
-                            <span class="text-xs font-normal text-gray-500">${groupMembers.length} 人</span>
-                        </div>
-                        <div class="divide-y divide-gray-100">
-                `;
+          // Create group card
+          const groupCard = document.createElement("div");
+          groupCard.className =
+            "bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden";
+
+          // Header
+          const headerDiv = document.createElement("div");
+          headerDiv.className =
+            "bg-gray-100 px-4 py-2 border-b border-gray-200 font-bold text-gray-700 flex justify-between items-center";
+
+          const vpSpan = document.createElement("span");
+          vpSpan.textContent = vp;
+
+          const countSpan = document.createElement("span");
+          countSpan.className = "text-xs font-normal text-gray-500";
+          countSpan.textContent = `${groupMembers.length} 人`;
+
+          headerDiv.appendChild(vpSpan);
+          headerDiv.appendChild(countSpan);
+
+          // Members list
+          const membersDiv = document.createElement("div");
+          membersDiv.className = "divide-y divide-gray-100";
 
           groupMembers.forEach((name) => {
-            const status = statusMap[name];
-            let iconHtml = "";
-            let statusText = "";
-            let rowClass = "bg-white"; // Default
+            const status = statusMap[name] || "";
+            const validatedStatus = validateStatus(status);
 
-            if (status === "出席") {
-              iconHtml =
-                '<i class="fas fa-check-circle text-green-500 text-lg"></i>';
-              statusText =
-                '<span class="text-xs text-green-600 font-bold">出席</span>';
-            } else if (status === "晚到") {
-              iconHtml =
-                '<i class="fas fa-running text-yellow-500 text-lg"></i>';
-              statusText =
-                '<span class="text-xs text-yellow-600 font-bold">晚到</span>';
-            } else if (status === "請假") {
-              iconHtml =
-                '<i class="fas fa-times-circle text-red-500 text-lg"></i>';
-              statusText =
-                '<span class="text-xs text-red-600 font-bold">請假</span>';
-              rowClass = "bg-red-50 bg-opacity-30";
+            // Create row
+            const rowDiv = document.createElement("div");
+            let rowClass =
+              "px-4 py-3 flex justify-between items-center hover:bg-gray-50 transition-colors";
+            if (validatedStatus === "請假") {
+              rowClass += " bg-red-50 bg-opacity-30";
             } else {
-              // Not checked in
-              iconHtml =
-                '<div class="w-5 h-5 rounded-full border-2 border-gray-200"></div>';
-              statusText = '<span class="text-xs text-gray-400">未打卡</span>';
+              rowClass += " bg-white";
+            }
+            rowDiv.className = rowClass;
+
+            // Name span
+            const nameSpan = document.createElement("span");
+            nameSpan.className = "text-gray-800";
+            if (validatedStatus) {
+              nameSpan.classList.add("font-semibold");
+            }
+            nameSpan.textContent = name;
+
+            // Status container
+            const statusContainer = document.createElement("div");
+            statusContainer.className =
+              "flex items-center gap-2 w-20 justify-end";
+
+            // Status text
+            const statusTextSpan = document.createElement("span");
+            if (validatedStatus === "出席") {
+              statusTextSpan.className = "text-xs text-green-600 font-bold";
+              statusTextSpan.textContent = "出席";
+            } else if (validatedStatus === "晚到") {
+              statusTextSpan.className = "text-xs text-yellow-600 font-bold";
+              statusTextSpan.textContent = "晚到";
+            } else if (validatedStatus === "請假") {
+              statusTextSpan.className = "text-xs text-red-600 font-bold";
+              statusTextSpan.textContent = "請假";
+            } else {
+              statusTextSpan.className = "text-xs text-gray-400";
+              statusTextSpan.textContent = "未打卡";
             }
 
-            htmlContent += `
-                        <div class="px-4 py-3 flex justify-between items-center hover:bg-gray-50 transition-colors ${rowClass}">
-                            <span class="text-gray-800 ${
-                              status ? "font-semibold" : ""
-                            }">${name}</span>
-                            <div class="flex items-center gap-2 w-20 justify-end">
-                                ${statusText}
-                                ${iconHtml}
-                            </div>
-                        </div>
-                    `;
+            // Icon
+            let iconElement;
+            if (validatedStatus === "出席") {
+              iconElement = document.createElement("i");
+              iconElement.className =
+                "fas fa-check-circle text-green-500 text-lg";
+            } else if (validatedStatus === "晚到") {
+              iconElement = document.createElement("i");
+              iconElement.className = "fas fa-running text-yellow-500 text-lg";
+            } else if (validatedStatus === "請假") {
+              iconElement = document.createElement("i");
+              iconElement.className =
+                "fas fa-times-circle text-red-500 text-lg";
+            } else {
+              iconElement = document.createElement("div");
+              iconElement.className =
+                "w-5 h-5 rounded-full border-2 border-gray-200";
+            }
+
+            statusContainer.appendChild(statusTextSpan);
+            statusContainer.appendChild(iconElement);
+
+            rowDiv.appendChild(nameSpan);
+            rowDiv.appendChild(statusContainer);
+            membersDiv.appendChild(rowDiv);
           });
 
-          htmlContent += `
-                        </div>
-                    </div>
-                `;
+          groupCard.appendChild(headerDiv);
+          groupCard.appendChild(membersDiv);
+          container.appendChild(groupCard);
         });
-
-        container.innerHTML = htmlContent;
       }
 
       // --- 4. Form Logic ---
@@ -851,44 +974,71 @@
           return itemDate === todayStr;
         });
 
+        // Clear existing content
+        recordList.innerHTML = "";
+
         if (todayData.length === 0) {
-          recordList.innerHTML =
-            '<p class="text-center text-gray-500 text-sm py-2">今日尚無打卡紀錄</p>';
+          const emptyMsg = document.createElement("p");
+          emptyMsg.className = "text-center text-gray-500 text-sm py-2";
+          emptyMsg.textContent = "今日尚無打卡紀錄";
+          recordList.appendChild(emptyMsg);
           return;
         }
 
         // Sort Descending (Newest first) for display log
         todayData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-        const html = todayData
-          .map((item) => {
-            const dateObj = new Date(item.timestamp);
-            const timeStr = dateObj.toLocaleTimeString("zh-TW", {
-              hour: "2-digit",
-              minute: "2-digit",
-            });
+        todayData.forEach((item) => {
+          const dateObj = new Date(item.timestamp);
+          const timeStr = dateObj.toLocaleTimeString("zh-TW", {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
 
-            let badgeColor = "bg-gray-100 text-gray-800";
-            if (item.status === "出席")
-              badgeColor = "bg-green-100 text-green-800";
-            if (item.status === "晚到")
-              badgeColor = "bg-yellow-100 text-yellow-800";
-            if (item.status === "請假") badgeColor = "bg-red-100 text-red-800";
+          // Validate and escape user data
+          const safeName = escapeHtml(item.name || "");
+          const safeVoicePart = validateVoicePart(item.voicePart);
+          const safeStatus = validateStatus(item.status);
 
-            return `
-                    <div class="bg-white p-3 rounded shadow-sm border border-gray-100 flex justify-between items-center">
-                        <div>
-                            <div class="font-bold text-gray-800">${item.name} <span class="text-xs text-gray-500 font-normal">(${item.voicePart})</span></div>
-                            <div class="text-xs text-gray-400 mt-1">${timeStr}</div>
-                        </div>
-                        <span class="${badgeColor} text-xs font-semibold px-2.5 py-0.5 rounded border border-opacity-20">
-                            ${item.status}
-                        </span>
-                    </div>
-                `;
-          })
-          .join("");
-        recordList.innerHTML = html;
+          // Determine badge color based on validated status
+          let badgeColor = "bg-gray-100 text-gray-800";
+          if (safeStatus === "出席") badgeColor = "bg-green-100 text-green-800";
+          else if (safeStatus === "晚到")
+            badgeColor = "bg-yellow-100 text-yellow-800";
+          else if (safeStatus === "請假")
+            badgeColor = "bg-red-100 text-red-800";
+
+          // Create DOM elements safely
+          const recordDiv = document.createElement("div");
+          recordDiv.className =
+            "bg-white p-3 rounded shadow-sm border border-gray-100 flex justify-between items-center";
+
+          const leftDiv = document.createElement("div");
+          const nameDiv = document.createElement("div");
+          nameDiv.className = "font-bold text-gray-800";
+          const nameText = document.createTextNode(safeName);
+          nameDiv.appendChild(nameText);
+          if (safeVoicePart) {
+            const voiceSpan = document.createElement("span");
+            voiceSpan.className = "text-xs text-gray-500 font-normal";
+            voiceSpan.textContent = ` (${safeVoicePart})`;
+            nameDiv.appendChild(voiceSpan);
+          }
+          leftDiv.appendChild(nameDiv);
+
+          const timeDiv = document.createElement("div");
+          timeDiv.className = "text-xs text-gray-400 mt-1";
+          timeDiv.textContent = timeStr;
+          leftDiv.appendChild(timeDiv);
+
+          const badgeSpan = document.createElement("span");
+          badgeSpan.className = `${badgeColor} text-xs font-semibold px-2.5 py-0.5 rounded border border-opacity-20`;
+          badgeSpan.textContent = safeStatus || "未知";
+
+          recordDiv.appendChild(leftDiv);
+          recordDiv.appendChild(badgeSpan);
+          recordList.appendChild(recordDiv);
+        });
       }
 
       // --- 7. GPS Utils ---
