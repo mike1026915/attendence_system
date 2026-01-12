@@ -1,11 +1,11 @@
 // Service Worker for PWA
-const CACHE_NAME = "attendance-system-v1";
+const CACHE_NAME = "attendance-system-v3";
 const urlsToCache = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./icon-192.png",
-  "./icon-512.png",
+  "./192x192.jpg",
+  "./512x512.jpg",
   "https://cdn.tailwindcss.com",
   "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css",
 ];
