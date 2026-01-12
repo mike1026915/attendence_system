@@ -1,5 +1,5 @@
 // Service Worker for PWA
-const CACHE_NAME = "attendance-system-v3";
+const CACHE_NAME = "attendance-system-v4";
 const urlsToCache = [
   "./",
   "./index.html",
@@ -56,14 +56,13 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
-  // Always fetch API requests from network (don't cache dynamic data)
+  // Skip API requests - let browser handle them directly (no service worker overhead)
   if (
     url.pathname.includes("script.google.com") ||
     url.pathname.includes("/macros/") ||
     event.request.method === "POST"
   ) {
-    event.respondWith(fetch(event.request));
-    return;
+    return; // Don't intercept, let browser handle directly
   }
 
   // Skip cross-origin requests that we can't cache
