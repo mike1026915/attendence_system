@@ -63,6 +63,62 @@ function doPost(e) {
 
 // Handle GET requests (Fetching data for display)
 function doGet(e) {
+  // Check if action is 'getImage'
+  if (e.parameter.action === 'getImage') {
+    try {
+      // Password verification
+      const providedPassword = e.parameter.password || "";
+      const storedPassword = PropertiesService.getScriptProperties().getProperty('IMAGE_EXPORT_PASSWORD') || "";
+
+      if (!providedPassword || providedPassword !== storedPassword) {
+        return ContentService.createTextOutput(
+          JSON.stringify({ result: "error", error: "Invalid password" })
+        ).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      const timezone = Session.getScriptTimeZone();
+      let dateStr = "";
+
+      // Get date from parameter or use today's date
+      if (e.parameter.date) {
+        dateStr = e.parameter.date;
+        // Validate date format (yyyy/MM/dd)
+        if (!/^\d{4}\/\d{2}\/\d{2}$/.test(dateStr)) {
+          return ContentService.createTextOutput(
+            JSON.stringify({ result: "error", error: "Invalid date format. Please use yyyy/MM/dd" })
+          ).setMimeType(ContentService.MimeType.JSON);
+        }
+      } else {
+        // Use today's date if not provided
+        const today = new Date();
+        dateStr = Utilities.formatDate(today, timezone, "yyyy/MM/dd");
+      }
+
+      // Calculate attendance data using the same logic as exportAttendanceImage
+      let attendanceData;
+      try {
+        attendanceData = calculateAttendanceDataByDate(dateStr);
+      } catch (error) {
+        return ContentService.createTextOutput(
+          JSON.stringify({ result: "error", error: "Failed to calculate attendance data: " + error.message })
+        ).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      // Generate HTML content
+      const htmlContent = generateAttendanceHtml(attendanceData, dateStr);
+
+      // Return HTML page
+      return HtmlService.createHtmlOutput(htmlContent)
+        .setTitle("Attendance Image - " + dateStr)
+        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+    } catch (error) {
+      return ContentService.createTextOutput(
+        JSON.stringify({ result: "error", error: error.toString() })
+      ).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
+  // Original doGet logic for fetching records and members
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
   // 1. 取得打卡紀錄 (用於顯示列表)
