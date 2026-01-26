@@ -1214,7 +1214,7 @@
       }
 
       // Export attendance image function
-      window.exportAttendanceImage = async function () {
+      window.exportAttendanceImage = function () {
         // Prompt for password
         const password = window.prompt("請輸入密碼以匯出點名表圖片：");
 
@@ -1233,34 +1233,10 @@
         // Build API URL
         const apiUrl = `${API_URL}?action=getImage&date=${encodeURIComponent(dateStr)}&password=${encodeURIComponent(password)}`;
 
-        try {
-          // Fetch from API
-          const response = await fetch(apiUrl);
-
-          // Check if response is HTML (success) or JSON (error)
-          const contentType = response.headers.get("content-type");
-
-          if (contentType && contentType.includes("text/html")) {
-            // Success: Open HTML in new window
-            const htmlContent = await response.text();
-            const newWindow = window.open("", "_blank");
-            if (newWindow) {
-              newWindow.document.write(htmlContent);
-              newWindow.document.close();
-            } else {
-              showNotification("無法開啟新視窗，請允許彈出視窗", "error");
-            }
-          } else {
-            // Error: Parse JSON error message
-            const errorData = await response.json();
-            showNotification(
-              errorData.error || "匯出失敗",
-              "error"
-            );
-          }
-        } catch (error) {
-          console.error("Export error:", error);
-          showNotification("連線錯誤，請稍後再試", "error");
+        // Open URL directly in new window to avoid CORS issues
+        const newWindow = window.open(apiUrl, "_blank");
+        if (!newWindow) {
+          showNotification("無法開啟新視窗，請允許彈出視窗", "error");
         }
       };
     </script>
