@@ -1113,7 +1113,7 @@ function generateAttendanceHtml(data, dateStr) {
       <div class="header-section">
         <div class="logo-title">
           <span class="music-notes">♪</span>
-          <span class="g">g</span><span class="major">Major</span> 點名表
+          <span class="g">G</span><span class="major">Major</span> 點名表
           <span class="music-notes">♫</span>
         </div>
         <div class="date-badge">📅 ${dateStr}</div>
