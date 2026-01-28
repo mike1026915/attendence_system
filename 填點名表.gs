@@ -118,6 +118,7 @@ function generateAttendanceByDate() {
     const name = normalizeName(row[1]);
     const part = row[2];
     const status = row[3];
+    const note = row[4] || "";
 
     // Use latest submission for duplicate names
     if (name) {
@@ -126,6 +127,7 @@ function generateAttendanceByDate() {
         part: part,
         status: status,
         timestamp: timestamp,
+        note: note,
       };
     }
   }
@@ -277,8 +279,14 @@ function generateAttendanceByDate() {
       const nameCell = targetSheet.getRange(currentRow, targetCol);
       const statusCell = targetSheet.getRange(currentRow, targetCol + 1);
 
+      // Check if this is a proxy check-in and add "(代)" mark
+      let displayName = member.name;
+      if (member.note && member.note.toString().trim().startsWith("proxy:")) {
+        displayName = member.name + "(代)";
+      }
+
       nameCell
-        .setValue(member.name)
+        .setValue(displayName)
         .setFontWeight("bold")
         .setFontSize(12)
         .setFontColor("#000000");
@@ -461,6 +469,7 @@ function calculateAttendanceDataByDate(targetDateStr) {
     const name = normalizeName(row[1]);
     const part = row[2];
     const status = row[3];
+    const note = row[4] || "";
 
     // Use latest submission for duplicate names
     if (name) {
@@ -469,6 +478,7 @@ function calculateAttendanceDataByDate(targetDateStr) {
         part: part,
         status: status,
         timestamp: timestamp,
+        note: note,
       };
     }
   }
@@ -602,8 +612,14 @@ function calculateAttendanceDataByDate(targetDateStr) {
         }
       }
 
+      // Check if this is a proxy check-in and add "(代)" mark
+      let displayName = member.name;
+      if (member.note && member.note.toString().trim().startsWith("proxy:")) {
+        displayName = member.name + "(代)";
+      }
+
       partData.members.push({
-        name: member.name,
+        name: displayName,
         status: statusSymbol,
       });
     });

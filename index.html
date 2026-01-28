@@ -234,6 +234,24 @@
               </p>
             </div>
 
+            <!-- Proxy Mode Checkbox -->
+            <div id="proxyModeContainer" class="bg-blue-50 border border-blue-200 rounded p-3 hidden">
+              <label class="flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  id="proxyModeCheckbox"
+                  class="mr-2 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <span class="text-sm text-gray-700">
+                  <i class="fas fa-user-check mr-1 text-blue-600"></i>
+                  我是在幫別人代打
+                </span>
+              </label>
+              <p class="text-xs text-blue-600 mt-1 ml-6">
+                請在「姓名」選單中選擇要代打的人
+              </p>
+            </div>
+
             <button
               type="submit"
               id="submitBtn"
@@ -338,8 +356,8 @@
         class="bg-gray-100 p-2 text-center text-xs text-gray-500 space-y-0.5 border-t"
       >
         <div>Powered by Google Sheets</div>
-        <div class="text-gray-400">API v5.0 · App v3.0.0</div>
-        <div class="mt-2">
+        <div class="text-gray-400">API v5.1 · App v3.1.0</div>
+        <div class="mt-2 flex justify-center items-center gap-4">
           <button
             onclick="exportAttendanceImage()"
             class="text-blue-600 hover:text-blue-800 transition-colors cursor-pointer"
@@ -347,13 +365,25 @@
           >
             <i class="fas fa-image text-lg"></i>
           </button>
+          <button
+            id="adminBtn"
+            class="text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
+            onmousedown="handleAdminButtonPress(event)"
+            onmouseup="handleAdminButtonRelease(event)"
+            onmouseleave="handleAdminButtonRelease(event)"
+            ontouchstart="handleAdminButtonPress(event)"
+            ontouchend="handleAdminButtonRelease(event)"
+            ontouchcancel="handleAdminButtonRelease(event)"
+          >
+            <i class="fas fa-cog text-lg"></i>
+          </button>
         </div>
       </div>
     </div>
 
     <script>
       const ENCODED_API_URL =
-        "aHR0cHM6Ly9zY3JpcHQuZ29vZ2xlLmNvbS9tYWNyb3Mvcy9BS2Z5Y2J5ekstRWRJZXhpcnBwOTFnclhJQThONGNmendvYWdGRURaUjRFSDVPOUI1Q1V0VmFwZGZIMXhsSndGM2NfM2NpcVAvZXhlYw==";
+        "aHR0cHM6Ly9zY3JpcHQuZ29vZ2xlLmNvbS9tYWNyb3Mvcy9BS2Z5Y2J3YUlSdzBDZVdEa0dfblUxNW5QOVF2eEJuQmNnLTBkc3hCdkVWLW5VYTRxcFZZWl9fS0ZQS013WHR4YjJwbjd3ekgvZXhlYw==";
 
       // Decode at runtime
       let API_URL;
@@ -393,6 +423,9 @@
       // Location validation state
       let isLocationValid = false;
 
+      // Proxy mode state
+      let isProxyMode = false;
+
       // --- DOM Elements ---
       const form = document.getElementById("attendanceForm");
       const submitBtn = document.getElementById("submitBtn");
@@ -407,6 +440,8 @@
       const recordList = document.getElementById("recordList");
       const gpsInfo = document.getElementById("gpsInfo");
       const distanceValue = document.getElementById("distanceValue");
+      const proxyModeCheckbox = document.getElementById("proxyModeCheckbox");
+      const proxyModeContainer = document.getElementById("proxyModeContainer");
 
       // Views
       const mainView = document.getElementById("mainView");
@@ -421,12 +456,67 @@
       document.getElementById("maxDistanceDisplay").textContent =
         MAX_DISTANCE_METERS;
 
+      // Proxy mode checkbox event listener
+      if (proxyModeCheckbox) {
+        proxyModeCheckbox.addEventListener("change", (e) => {
+          isProxyMode = e.target.checked;
+        });
+      }
+
+      // Check and show proxy mode container if proxyByName is set
+      function updateProxyModeVisibility() {
+        const proxyByName = localStorage.getItem("proxyByName");
+        if (proxyModeContainer) {
+          if (proxyByName) {
+            proxyModeContainer.classList.remove("hidden");
+          } else {
+            proxyModeContainer.classList.add("hidden");
+          }
+        }
+      }
+
+      // Admin button long press handlers
+      let adminPressTimer = null;
+      const ADMIN_PRESS_DURATION = 2000; // 2 seconds
+
+      window.handleAdminButtonPress = function (e) {
+        e.preventDefault();
+        adminPressTimer = setTimeout(() => {
+          const currentName = localStorage.getItem("proxyByName") || "";
+          const newName = window.prompt(
+            "請輸入代打人名稱：",
+            currentName
+          );
+          if (newName !== null) {
+            if (newName.trim()) {
+              localStorage.setItem("proxyByName", newName.trim());
+              showNotification(`代打人名稱已設定為：${newName.trim()}`, "success");
+            } else {
+              localStorage.removeItem("proxyByName");
+              showNotification("代打人名稱已清除", "success");
+            }
+            updateProxyModeVisibility();
+          }
+          adminPressTimer = null;
+        }, ADMIN_PRESS_DURATION);
+      };
+
+      window.handleAdminButtonRelease = function (e) {
+        e.preventDefault();
+        if (adminPressTimer) {
+          clearTimeout(adminPressTimer);
+          adminPressTimer = null;
+        }
+      };
+
       // Global Data Storage
       let globalMembers = [];
       let globalRecords = []; // Store records globally for stats calculation
 
       // --- 1. Initialization & Fetching ---
       window.addEventListener("load", () => {
+        // Initialize proxy mode visibility on load
+        updateProxyModeVisibility();
         // Register Service Worker for PWA
         if ("serviceWorker" in navigator) {
           navigator.serviceWorker
@@ -956,10 +1046,21 @@
           }
         }
 
+        // Build note field for proxy check-in
+        let note = "";
+        if (isProxyMode) {
+          // Get proxy by name from localStorage
+          const proxyBy = localStorage.getItem("proxyByName");
+          if (proxyBy) {
+            note = "proxy:" + proxyBy;
+          }
+        }
+
         const formData = {
           name: finalName,
           voicePart: voiceSelect.value,
           status: status,
+          note: note,
         };
         submitBtn.disabled = true;
         btnText.innerHTML =
@@ -986,6 +1087,11 @@
             '<option value="" selected>請先選擇聲部...</option>';
           nameSelect.disabled = true;
           isLocationValid = false;
+          // Reset proxy mode checkbox but keep the state variable
+          if (proxyModeCheckbox) {
+            proxyModeCheckbox.checked = false;
+            isProxyMode = false;
+          }
           fetchData();
         } catch (error) {
           showNotification("送出失敗", "error");
@@ -1028,6 +1134,11 @@
           const safeName = escapeHtml(item.name || "");
           const safeVoicePart = validateVoicePart(item.voicePart);
           const safeStatus = validateStatus(item.status);
+          const note = item.note || "";
+
+          // Check if this is a proxy check-in
+          const isProxy = note && note.startsWith("proxy:");
+          const proxyBy = isProxy ? note.replace("proxy:", "") : "";
 
           // Determine badge color based on validated status
           let badgeColor = "bg-gray-100 text-gray-800";
@@ -1058,14 +1169,33 @@
           const timeDiv = document.createElement("div");
           timeDiv.className = "text-xs text-gray-400 mt-1";
           timeDiv.textContent = timeStr;
+          if (isProxy) {
+            const proxyText = document.createElement("div");
+            proxyText.className = "text-xs text-blue-600 mt-0.5";
+            proxyText.innerHTML = `<i class="fas fa-user-check mr-1"></i>由 ${escapeHtml(proxyBy)} 代打`;
+            timeDiv.appendChild(proxyText);
+          }
           leftDiv.appendChild(timeDiv);
+
+          // Right side: status badge and proxy badge
+          const rightDiv = document.createElement("div");
+          rightDiv.className = "flex items-center gap-2";
 
           const badgeSpan = document.createElement("span");
           badgeSpan.className = `${badgeColor} text-xs font-semibold px-2.5 py-0.5 rounded border border-opacity-20`;
           badgeSpan.textContent = safeStatus || "未知";
+          rightDiv.appendChild(badgeSpan);
+
+          // Add proxy badge if this is a proxy check-in
+          if (isProxy) {
+            const proxyBadge = document.createElement("span");
+            proxyBadge.className = "bg-blue-100 text-blue-700 text-xs font-semibold px-2 py-0.5 rounded border border-blue-200";
+            proxyBadge.innerHTML = '<i class="fas fa-user-check mr-1"></i>代打';
+            rightDiv.appendChild(proxyBadge);
+          }
 
           recordDiv.appendChild(leftDiv);
-          recordDiv.appendChild(badgeSpan);
+          recordDiv.appendChild(rightDiv);
           recordList.appendChild(recordDiv);
         });
       }
