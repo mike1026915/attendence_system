@@ -1,13 +1,10 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-TW">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#2563eb" />
-    <meta
-      name="description"
-      content="合唱團點名打卡系統"
-    />
+    <meta name="description" content="合唱團點名打卡系統" />
     <title>合唱團點名打卡系統</title>
     <!-- Favicon -->
     <link rel="icon" type="image/jpeg" href="./192x192.jpg" />
@@ -16,18 +13,12 @@
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content="合唱團點名打卡系統" />
-    <meta
-      property="og:description"
-      content="合唱團點名打卡系統"
-    />
+    <meta property="og:description" content="合唱團點名打卡系統" />
     <meta property="og:image" content="./512x512.jpg" />
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="合唱團點名打卡系統" />
-    <meta
-      name="twitter:description"
-      content="合唱團點名打卡系統"
-    />
+    <meta name="twitter:description" content="合唱團點名打卡系統" />
     <meta name="twitter:image" content="./512x512.jpg" />
     <!-- PWA Manifest -->
     <link rel="manifest" href="./manifest.json" />
@@ -170,7 +161,7 @@
               <label class="block text-gray-700 text-sm font-bold mb-2"
                 >出席狀態</label
               >
-              <div class="grid grid-cols-3 gap-2">
+              <div class="grid grid-cols-2 gap-2">
                 <label class="cursor-pointer">
                   <input
                     type="radio"
@@ -191,21 +182,6 @@
                   <input
                     type="radio"
                     name="status"
-                    value="晚到"
-                    class="peer sr-only"
-                    onchange="handleStatusChange()"
-                  />
-                  <div
-                    class="rounded-md border-2 border-gray-200 p-3 text-center peer-checked:border-yellow-500 peer-checked:bg-yellow-50 peer-checked:text-yellow-700 transition-all hover:bg-gray-50"
-                  >
-                    <i class="fas fa-running block mb-1 text-xl"></i>
-                    <span class="text-sm font-bold">晚到</span>
-                  </div>
-                </label>
-                <label class="cursor-pointer">
-                  <input
-                    type="radio"
-                    name="status"
                     value="請假"
                     class="peer sr-only"
                     onchange="handleStatusChange()"
@@ -218,10 +194,30 @@
                   </div>
                 </label>
               </div>
+              <div class="mt-2">
+                <label
+                  class="inline-flex items-center text-sm text-gray-700 cursor-not-allowed"
+                  id="lateCheckboxLabel"
+                >
+                  <input
+                    type="checkbox"
+                    id="lateCheckbox"
+                    class="mr-2 w-4 h-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500"
+                    disabled
+                  />
+                  <span class="flex items-center">
+                    <i class="fas fa-running mr-1 text-yellow-500"></i>
+                    可能晚到
+                  </span>
+                </label>
+              </div>
             </div>
 
             <!-- Proxy Mode Checkbox -->
-            <div id="proxyModeContainer" class="bg-blue-50 border border-blue-200 rounded p-3 hidden">
+            <div
+              id="proxyModeContainer"
+              class="bg-blue-50 border border-blue-200 rounded p-3 hidden"
+            >
               <label class="flex items-center cursor-pointer">
                 <input
                   type="checkbox"
@@ -291,12 +287,6 @@
               0
             </div>
             <div class="text-xs text-gray-500">出席</div>
-          </div>
-          <div>
-            <div class="text-2xl font-bold text-yellow-600" id="totalLate">
-              0
-            </div>
-            <div class="text-xs text-gray-500">晚到</div>
           </div>
           <div>
             <div class="text-2xl font-bold text-red-600" id="totalLeave">0</div>
@@ -411,13 +401,15 @@
       const nameSelect = document.getElementById("nameSelect");
       const voiceSelect = document.getElementById("voicePart");
       const manualNameContainer = document.getElementById(
-        "manualNameContainer"
+        "manualNameContainer",
       );
       const manualNameInput = document.getElementById("manualNameInput");
       const notification = document.getElementById("notification");
       const recordList = document.getElementById("recordList");
       const proxyModeCheckbox = document.getElementById("proxyModeCheckbox");
       const proxyModeContainer = document.getElementById("proxyModeContainer");
+      const lateCheckbox = document.getElementById("lateCheckbox");
+      const lateCheckboxLabel = document.getElementById("lateCheckboxLabel");
 
       // Views
       const mainView = document.getElementById("mainView");
@@ -456,14 +448,14 @@
         e.preventDefault();
         adminPressTimer = setTimeout(() => {
           const currentName = localStorage.getItem("proxyByName") || "";
-          const newName = window.prompt(
-            "請輸入代打人名稱：",
-            currentName
-          );
+          const newName = window.prompt("請輸入代打人名稱：", currentName);
           if (newName !== null) {
             if (newName.trim()) {
               localStorage.setItem("proxyByName", newName.trim());
-              showNotification(`代打人名稱已設定為：${newName.trim()}`, "success");
+              showNotification(
+                `代打人名稱已設定為：${newName.trim()}`,
+                "success",
+              );
             } else {
               localStorage.removeItem("proxyByName");
               showNotification("代打人名稱已清除", "success");
@@ -560,7 +552,7 @@
             "Data Loaded. Members:",
             globalMembers.length,
             "Records:",
-            globalRecords.length
+            globalRecords.length,
           );
 
           // Render Main View List (Logs show all attempts)
@@ -620,7 +612,7 @@
           setTimeout(() => {
             // Check if saved name exists in the current voice part's members
             const filteredMembers = globalMembers.filter(
-              (m) => m.voicePart === savedVoicePart
+              (m) => m.voicePart === savedVoicePart,
             );
             const memberNames = filteredMembers.map((m) => m.name);
 
@@ -663,7 +655,7 @@
         // 2. Sort by timestamp ASC (Oldest -> Newest) to ensure chronological order
         let todayRecords = allRecords
           .filter(
-            (item) => new Date(item.timestamp).toDateString() === todayStr
+            (item) => new Date(item.timestamp).toDateString() === todayStr,
           )
           .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
@@ -675,39 +667,61 @@
         const uniqueRecords = Object.values(uniqueRecordMap);
 
         const stats = {
-          T1: { attend: 0, late: 0, leave: 0, total: 0 },
-          T2: { attend: 0, late: 0, leave: 0, total: 0 },
-          B1: { attend: 0, late: 0, leave: 0, total: 0 },
-          B2: { attend: 0, late: 0, leave: 0, total: 0 },
-          Conductor: { attend: 0, late: 0, leave: 0, total: 0 },
+          T1: { attend: 0, leave: 0, total: 0 },
+          T2: { attend: 0, leave: 0, total: 0 },
+          B1: { attend: 0, leave: 0, total: 0 },
+          B2: { attend: 0, leave: 0, total: 0 },
+          Conductor: { attend: 0, leave: 0, total: 0 },
+        };
+
+        const namesByVp = {
+          T1: [],
+          T2: [],
+          B1: [],
+          B2: [],
+          Conductor: [],
         };
 
         let grandTotalAttend = 0;
-        let grandTotalLate = 0;
         let grandTotalLeave = 0;
 
         uniqueRecords.forEach((record) => {
           const vp = validateVoicePart(record.voicePart);
           const status = validateStatus(record.status);
+          const note = record.note || "";
+          const noteParts = note
+            .toString()
+            .split(";")
+            .map((s) => s.trim())
+            .filter((s) => s);
+          const isLateByNote = noteParts.includes("late");
 
           // Only count valid voice parts
           if (vp && stats[vp]) {
             stats[vp].total++;
+            const isLate =
+              status === "晚到" || (status === "出席" && isLateByNote);
+
             if (status === "出席") {
               stats[vp].attend++;
               grandTotalAttend++;
-            } else if (status === "晚到") {
-              stats[vp].late++;
-              grandTotalLate++;
             } else if (status === "請假") {
               stats[vp].leave++;
               grandTotalLeave++;
             }
+
+            const displayName = isLate
+              ? `${record.name || ""} (晚)`
+              : record.name || "";
+            namesByVp[vp].push({
+              name: displayName,
+              isLate: isLate,
+              status: status,
+            });
           }
         });
 
         document.getElementById("totalAttend").textContent = grandTotalAttend;
-        document.getElementById("totalLate").textContent = grandTotalLate;
         document.getElementById("totalLeave").textContent = grandTotalLeave;
 
         const statsGrid = document.getElementById("statsGrid");
@@ -738,7 +752,7 @@
 
           // Stats grid section
           const gridDiv = document.createElement("div");
-          gridDiv.className = "grid grid-cols-3 gap-2 text-center text-sm";
+          gridDiv.className = "grid grid-cols-2 gap-2 text-center text-sm";
 
           // Attend stat
           const attendDiv = document.createElement("div");
@@ -751,18 +765,6 @@
           attendLabel.textContent = "出席";
           attendDiv.appendChild(attendValue);
           attendDiv.appendChild(attendLabel);
-
-          // Late stat
-          const lateDiv = document.createElement("div");
-          lateDiv.className = "bg-yellow-50 rounded p-1";
-          const lateValue = document.createElement("div");
-          lateValue.className = "font-bold text-yellow-700";
-          lateValue.textContent = data.late;
-          const lateLabel = document.createElement("div");
-          lateLabel.className = "text-[10px] text-yellow-600";
-          lateLabel.textContent = "晚到";
-          lateDiv.appendChild(lateValue);
-          lateDiv.appendChild(lateLabel);
 
           // Leave stat
           const leaveDiv = document.createElement("div");
@@ -777,11 +779,41 @@
           leaveDiv.appendChild(leaveLabel);
 
           gridDiv.appendChild(attendDiv);
-          gridDiv.appendChild(lateDiv);
           gridDiv.appendChild(leaveDiv);
+
+          // Names list with late mark
+          const namesContainer = document.createElement("div");
+          namesContainer.className = "mt-3 border-t pt-2";
+
+          const namesTitle = document.createElement("div");
+          namesTitle.className = "text-[11px] text-gray-500 mb-1";
+          namesTitle.textContent = "今日名單";
+          namesContainer.appendChild(namesTitle);
+
+          const namesList = document.createElement("div");
+          namesList.className =
+            "flex flex-wrap gap-1 text-[11px] text-gray-700";
+
+          namesByVp[vp].forEach((item) => {
+            const nameBadge = document.createElement("span");
+            nameBadge.className =
+              "px-2 py-0.5 rounded-full bg-gray-50 border border-gray-200";
+            nameBadge.textContent = item.name || "";
+            namesList.appendChild(nameBadge);
+          });
+
+          if (namesByVp[vp].length === 0) {
+            const emptyText = document.createElement("span");
+            emptyText.className = "text-[11px] text-gray-400";
+            emptyText.textContent = "今日尚無紀錄";
+            namesList.appendChild(emptyText);
+          }
+
+          namesContainer.appendChild(namesList);
 
           card.appendChild(headerDiv);
           card.appendChild(gridDiv);
+          card.appendChild(namesContainer);
           statsGrid.appendChild(card);
         });
       }
@@ -803,6 +835,7 @@
 
         // Map: Name -> Status (for today)
         const statusMap = {};
+        const lateMap = {};
 
         // 1. Filter today
         // 2. Sort Oldest -> Newest to ensure we capture the LAST update
@@ -812,10 +845,23 @@
 
         // 3. Process records: overwrite logic ensures latest status wins
         todayRecords.forEach((r) => {
-          const safeName = escapeHtml(r.name || "");
+          const rawName = r.name || "";
+          const safeName = escapeHtml(rawName);
           const safeStatus = validateStatus(r.status);
+          const note = r.note || "";
+          const noteParts = note
+            .toString()
+            .split(";")
+            .map((s) => s.trim())
+            .filter((s) => s);
+          const isLateByNote = noteParts.includes("late");
+          const isLate =
+            safeStatus === "晚到" ||
+            (safeStatus === "出席" && isLateByNote === true);
+
           if (safeName) {
             statusMap[safeName] = safeStatus;
+            lateMap[safeName] = isLate;
           }
         });
 
@@ -879,7 +925,9 @@
             if (validatedStatus) {
               nameSpan.classList.add("font-semibold");
             }
-            nameSpan.textContent = name;
+            const displayName =
+              lateMap[name] && validatedStatus ? `${name} (晚)` : name;
+            nameSpan.textContent = displayName;
 
             // Status container
             const statusContainer = document.createElement("div");
@@ -941,7 +989,7 @@
         nameSelect.innerHTML =
           '<option value="" selected disabled>請選擇姓名</option>';
         const filteredMembers = globalMembers.filter(
-          (m) => m.voicePart === selectedVoice
+          (m) => m.voicePart === selectedVoice,
         );
         filteredMembers.forEach((m) => {
           const option = document.createElement("option");
@@ -973,6 +1021,26 @@
       window.handleStatusChange = function () {
         submitBtn.disabled = false;
         btnText.textContent = "送出打卡";
+        const checkedStatusInput = document.querySelector(
+          'input[name="status"]:checked',
+        );
+        const currentStatus = checkedStatusInput
+          ? checkedStatusInput.value
+          : "";
+
+        if (lateCheckbox && lateCheckboxLabel) {
+          if (currentStatus === "出席") {
+            lateCheckbox.disabled = false;
+            lateCheckboxLabel.classList.remove(
+              "cursor-not-allowed",
+              "opacity-50",
+            );
+          } else {
+            lateCheckbox.checked = false;
+            lateCheckbox.disabled = true;
+            lateCheckboxLabel.classList.add("cursor-not-allowed", "opacity-50");
+          }
+        }
       };
 
       // --- 5. Submit Logic ---
@@ -993,18 +1061,29 @@
           }
         }
         const status = document.querySelector(
-          'input[name="status"]:checked'
+          'input[name="status"]:checked',
         ).value;
 
-        // Build note field for proxy check-in
-        let note = "";
+        // Build note field for late and proxy check-in
+        const noteParts = [];
         if (isProxyMode) {
           // Get proxy by name from localStorage
           const proxyBy = localStorage.getItem("proxyByName");
           if (proxyBy) {
-            note = "proxy:" + proxyBy;
+            noteParts.push("proxy:" + proxyBy);
           }
         }
+
+        if (
+          status === "出席" &&
+          lateCheckbox &&
+          !lateCheckbox.disabled &&
+          lateCheckbox.checked
+        ) {
+          noteParts.push("late");
+        }
+
+        const note = noteParts.join(";");
 
         const formData = {
           name: finalName,
@@ -1079,7 +1158,8 @@
           });
 
           // Validate and escape user data
-          const safeName = escapeHtml(item.name || "");
+          const rawName = item.name || "";
+          const safeName = escapeHtml(rawName);
           const safeVoicePart = validateVoicePart(item.voicePart);
           const safeStatus = validateStatus(item.status);
           const note = item.note || "";
@@ -1087,6 +1167,17 @@
           // Check if this is a proxy check-in
           const isProxy = note && note.startsWith("proxy:");
           const proxyBy = isProxy ? note.replace("proxy:", "") : "";
+
+          // Check if this record is late (old status or new note format)
+          const noteParts = note
+            .toString()
+            .split(";")
+            .map((s) => s.trim())
+            .filter((s) => s);
+          const isLateByNote = noteParts.includes("late");
+          const isLate =
+            safeStatus === "晚到" ||
+            (safeStatus === "出席" && isLateByNote === true);
 
           // Determine badge color based on validated status
           let badgeColor = "bg-gray-100 text-gray-800";
@@ -1104,7 +1195,8 @@
           const leftDiv = document.createElement("div");
           const nameDiv = document.createElement("div");
           nameDiv.className = "font-bold text-gray-800";
-          const nameText = document.createTextNode(safeName);
+          const displayName = isLate ? `${safeName} (晚)` : safeName;
+          const nameText = document.createTextNode(displayName);
           nameDiv.appendChild(nameText);
           if (safeVoicePart) {
             const voiceSpan = document.createElement("span");
@@ -1137,7 +1229,8 @@
           // Add proxy badge if this is a proxy check-in
           if (isProxy) {
             const proxyBadge = document.createElement("span");
-            proxyBadge.className = "bg-blue-100 text-blue-700 text-xs font-semibold px-2 py-0.5 rounded border border-blue-200";
+            proxyBadge.className =
+              "bg-blue-100 text-blue-700 text-xs font-semibold px-2 py-0.5 rounded border border-blue-200";
             proxyBadge.innerHTML = '<i class="fas fa-user-check mr-1"></i>代打';
             rightDiv.appendChild(proxyBadge);
           }
