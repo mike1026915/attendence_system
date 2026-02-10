@@ -72,23 +72,16 @@
         <button
           onclick="switchTab('main')"
           id="tab-main"
-          class="tab-btn w-1/3 py-3 text-center font-bold text-blue-600 border-b-2 border-blue-600 focus:outline-none"
+          class="tab-btn w-1/2 py-3 text-center font-bold text-blue-600 border-b-2 border-blue-600 focus:outline-none"
         >
           <i class="fas fa-check-square mr-1"></i> 打卡
         </button>
         <button
           onclick="switchTab('stats')"
           id="tab-stats"
-          class="tab-btn w-1/3 py-3 text-center font-bold text-gray-500 border-b-2 border-transparent focus:outline-none hover:bg-gray-50"
+          class="tab-btn w-1/2 py-3 text-center font-bold text-gray-500 border-b-2 border-transparent focus:outline-none hover:bg-gray-50"
         >
           <i class="fas fa-chart-pie mr-1"></i> 統計
-        </button>
-        <button
-          onclick="switchTab('list')"
-          id="tab-list"
-          class="tab-btn w-1/3 py-3 text-center font-bold text-gray-500 border-b-2 border-transparent focus:outline-none hover:bg-gray-50"
-        >
-          <i class="fas fa-users mr-1"></i> 名單
         </button>
       </div>
 
@@ -332,7 +325,7 @@
         class="bg-gray-100 p-2 text-center text-xs text-gray-500 space-y-0.5 border-t"
       >
         <div>Powered by Google Sheets</div>
-        <div class="text-gray-400">API v5.1 · App v3.1.0</div>
+        <div class="text-gray-400">API v5.1 · App v5.0.0</div>
         <div class="mt-2 flex justify-center items-center gap-4">
           <button
             onclick="exportAttendanceImage()"
@@ -513,7 +506,7 @@
         memberListView.classList.add("hidden");
 
         // Reset all tabs styles
-        [tabMain, tabStats, tabList].forEach((tab) => {
+        [tabMain, tabStats].forEach((tab) => {
           tab.classList.remove("text-blue-600", "border-blue-600");
           tab.classList.add("text-gray-500", "border-transparent");
         });
@@ -674,6 +667,10 @@
           Conductor: { attend: 0, leave: 0, total: 0 },
         };
 
+        // Map for each member's latest status（今日）
+        const statusMap = {};
+        const lateMap = {};
+
         const namesByVp = {
           T1: [],
           T2: [],
@@ -710,15 +707,58 @@
               grandTotalLeave++;
             }
 
-            const displayName = isLate
-              ? `${record.name || ""} (晚)`
-              : record.name || "";
-            namesByVp[vp].push({
-              name: displayName,
-              isLate: isLate,
-              status: status,
-            });
+            // 記錄每位成員當天的最新狀態
+            const memberName = record.name || "";
+            if (memberName) {
+              statusMap[memberName] = status;
+              lateMap[memberName] = isLate;
+            }
           }
+        });
+
+        // 依照「完整名單」產生每個聲部的今日名單（含未打卡）
+        const memberNamesByVp = {
+          T1: new Set(),
+          T2: new Set(),
+          B1: new Set(),
+          B2: new Set(),
+          Conductor: new Set(),
+        };
+
+        // 先由成員名單建立基礎清單
+        (globalMembers || []).forEach((m) => {
+          const vp = validateVoicePart(m.voicePart);
+          const name = m.name || "";
+          if (!vp || !name || !namesByVp[vp]) return;
+          memberNamesByVp[vp].add(name);
+
+          const status = validateStatus(statusMap[name] || "");
+          const isLate = !!lateMap[name];
+          const displayName = isLate ? `${name} (晚)` : name;
+
+          namesByVp[vp].push({
+            name: displayName,
+            isLate: isLate,
+            status: status,
+          });
+        });
+
+        // 再補上「有紀錄但不在成員名單」的人，避免漏掉
+        uniqueRecords.forEach((record) => {
+          const vp = validateVoicePart(record.voicePart);
+          const name = record.name || "";
+          if (!vp || !name || !namesByVp[vp]) return;
+          if (memberNamesByVp[vp].has(name)) return;
+
+          const status = validateStatus(statusMap[name] || "");
+          const isLate = !!lateMap[name];
+          const displayName = isLate ? `${name} (晚)` : name;
+
+          namesByVp[vp].push({
+            name: displayName,
+            isLate: isLate,
+            status: status,
+          });
         });
 
         document.getElementById("totalAttend").textContent = grandTotalAttend;
@@ -796,8 +836,22 @@
 
           namesByVp[vp].forEach((item) => {
             const nameBadge = document.createElement("span");
-            nameBadge.className =
-              "px-2 py-0.5 rounded-full bg-gray-50 border border-gray-200";
+            let badgeClass = "px-2 py-0.5 rounded-full border text-[11px] ";
+
+            if (item.status === "出席") {
+              badgeClass +=
+                "bg-green-50 border-green-200 text-green-700 font-semibold";
+            } else if (item.status === "晚到") {
+              badgeClass +=
+                "bg-yellow-50 border-yellow-200 text-yellow-700 font-semibold";
+            } else if (item.status === "請假") {
+              badgeClass +=
+                "bg-red-50 border-red-200 text-red-700 font-semibold";
+            } else {
+              badgeClass += "bg-gray-50 border-gray-200 text-gray-400";
+            }
+
+            nameBadge.className = badgeClass;
             nameBadge.textContent = item.name || "";
             namesList.appendChild(nameBadge);
           });
