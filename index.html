@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#2563eb" />
     <meta
       name="description"
-      content="合唱團點名打卡系統 - 使用 GPS 定位進行團練打卡"
+      content="合唱團點名打卡系統"
     />
     <title>合唱團點名打卡系統</title>
     <!-- Favicon -->
@@ -18,7 +18,7 @@
     <meta property="og:title" content="合唱團點名打卡系統" />
     <meta
       property="og:description"
-      content="合唱團點名打卡系統 - 使用 GPS 定位進行團練打卡"
+      content="合唱團點名打卡系統"
     />
     <meta property="og:image" content="./512x512.jpg" />
     <!-- Twitter Card -->
@@ -26,7 +26,7 @@
     <meta name="twitter:title" content="合唱團點名打卡系統" />
     <meta
       name="twitter:description"
-      content="合唱團點名打卡系統 - 使用 GPS 定位進行團練打卡"
+      content="合唱團點名打卡系統"
     />
     <meta name="twitter:image" content="./512x512.jpg" />
     <!-- PWA Manifest -->
@@ -73,7 +73,7 @@
         <h1 class="text-2xl font-bold">
           <i class="fas fa-music mr-2"></i>團練點名系統
         </h1>
-        <p class="text-sm opacity-90 mt-2">請開啟 GPS 以進行打卡</p>
+        <p class="text-sm opacity-90 mt-2">請選擇聲部與姓名後即可打卡</p>
       </div>
 
       <!-- Navigation Tabs -->
@@ -218,20 +218,6 @@
                   </div>
                 </label>
               </div>
-            </div>
-
-            <!-- GPS Info -->
-            <div
-              id="gpsInfo"
-              class="hidden text-sm text-gray-600 bg-gray-100 p-3 rounded"
-            >
-              <p>
-                <i class="fas fa-location-arrow mr-1"></i> 距離:
-                <span id="distanceValue" class="font-mono">計算中...</span>
-              </p>
-              <p class="text-xs text-gray-500 mt-1">
-                需在 <span id="maxDistanceDisplay"></span>m 內。
-              </p>
             </div>
 
             <!-- Proxy Mode Checkbox -->
@@ -415,14 +401,6 @@
         return validStatuses.includes(status) ? status : "";
       }
 
-      // --- Configuration ---
-      const TARGET_LAT = 25.048372596100723;
-      const TARGET_LNG = 121.5279033131007;
-      const MAX_DISTANCE_METERS = 300;
-
-      // Location validation state
-      let isLocationValid = false;
-
       // Proxy mode state
       let isProxyMode = false;
 
@@ -438,8 +416,6 @@
       const manualNameInput = document.getElementById("manualNameInput");
       const notification = document.getElementById("notification");
       const recordList = document.getElementById("recordList");
-      const gpsInfo = document.getElementById("gpsInfo");
-      const distanceValue = document.getElementById("distanceValue");
       const proxyModeCheckbox = document.getElementById("proxyModeCheckbox");
       const proxyModeContainer = document.getElementById("proxyModeContainer");
 
@@ -452,9 +428,6 @@
       const tabMain = document.getElementById("tab-main");
       const tabStats = document.getElementById("tab-stats");
       const tabList = document.getElementById("tab-list");
-
-      document.getElementById("maxDistanceDisplay").textContent =
-        MAX_DISTANCE_METERS;
 
       // Proxy mode checkbox event listener
       if (proxyModeCheckbox) {
@@ -998,21 +971,8 @@
       };
 
       window.handleStatusChange = function () {
-        const status = document.querySelector(
-          'input[name="status"]:checked'
-        ).value;
-        if (status === "出席") {
-          gpsInfo.classList.remove("hidden");
-          submitBtn.disabled = true;
-          isLocationValid = false;
-          btnText.textContent = "定位中...";
-          checkLocation();
-        } else {
-          gpsInfo.classList.add("hidden");
-          submitBtn.disabled = false;
-          isLocationValid = true;
-          btnText.textContent = "送出打卡";
-        }
+        submitBtn.disabled = false;
+        btnText.textContent = "送出打卡";
       };
 
       // --- 5. Submit Logic ---
@@ -1035,16 +995,6 @@
         const status = document.querySelector(
           'input[name="status"]:checked'
         ).value;
-
-        // Validate location if status is "出席"
-        if (status === "出席") {
-          if (!isLocationValid) {
-            showNotification("位置驗證失敗，請確認您在打卡範圍內", "error");
-            // Re-check location to update UI
-            checkLocation();
-            return;
-          }
-        }
 
         // Build note field for proxy check-in
         let note = "";
@@ -1081,12 +1031,10 @@
           }
 
           form.reset();
-          gpsInfo.classList.add("hidden");
           manualNameContainer.classList.add("hidden");
           nameSelect.innerHTML =
             '<option value="" selected>請先選擇聲部...</option>';
           nameSelect.disabled = true;
-          isLocationValid = false;
           // Reset proxy mode checkbox but keep the state variable
           if (proxyModeCheckbox) {
             proxyModeCheckbox.checked = false;
@@ -1198,138 +1146,6 @@
           recordDiv.appendChild(rightDiv);
           recordList.appendChild(recordDiv);
         });
-      }
-
-      // --- 7. GPS Utils ---
-      function isMobileDevice() {
-        return (
-          /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-            navigator.userAgent
-          ) || window.innerWidth <= 768
-        );
-      }
-
-      function isFacebookBrowser() {
-        const ua = navigator.userAgent || navigator.vendor || window.opera;
-        return /FBAN|FBAV|FB_IAB|FB4A/i.test(ua);
-      }
-
-      function checkLocation() {
-        if (!navigator.geolocation) {
-          if (isFacebookBrowser()) {
-            showNotification(
-              "Facebook 內建瀏覽器可能無法使用 GPS，建議使用外部瀏覽器",
-              "error"
-            );
-            btnText.textContent = "請使用外部瀏覽器";
-          } else if (isMobileDevice()) {
-            const shouldRequest = confirm(
-              "您的裝置似乎不支援 GPS 定位功能。\n\n" +
-                "請確認：\n" +
-                "1. 瀏覽器是否已授權位置權限\n" +
-                "2. 裝置的 GPS 功能是否已開啟\n\n" +
-                "是否要重新嘗試授權？"
-            );
-            if (shouldRequest) {
-              // Try to request permission anyway
-              showNotification("請在瀏覽器設定中開啟位置權限", "error");
-              btnText.textContent = "請授權位置權限";
-            } else {
-              showNotification("需要 GPS 權限才能進行打卡", "error");
-              btnText.textContent = "需要 GPS 權限";
-            }
-          } else {
-            showNotification("不支援 GPS", "error");
-          }
-          submitBtn.disabled = true;
-          isLocationValid = false;
-          return;
-        }
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const d = calculateDistance(
-              position.coords.latitude,
-              position.coords.longitude,
-              TARGET_LAT,
-              TARGET_LNG
-            );
-            distanceValue.textContent = Math.round(d) + " 公尺";
-            if (d <= MAX_DISTANCE_METERS) {
-              submitBtn.disabled = false;
-              isLocationValid = true;
-              btnText.textContent = "送出打卡";
-              distanceValue.classList.replace("text-red-600", "text-green-600");
-              distanceValue.classList.remove("text-red-600");
-              distanceValue.classList.add("text-green-600");
-            } else {
-              submitBtn.disabled = true;
-              isLocationValid = false;
-              btnText.textContent = "不在範圍內";
-              distanceValue.classList.replace("text-green-600", "text-red-600");
-              distanceValue.classList.remove("text-green-600");
-              distanceValue.classList.add("text-red-600");
-            }
-          },
-          (error) => {
-            if (isFacebookBrowser()) {
-              let errorMsg = "無法定位";
-              if (error.code === error.PERMISSION_DENIED) {
-                errorMsg =
-                  "Facebook 瀏覽器無法取得位置權限，請在 Facebook 中點擊右上角「...」→「在瀏覽器中開啟」";
-              } else if (error.code === error.POSITION_UNAVAILABLE) {
-                errorMsg =
-                  "無法取得位置資訊，建議使用外部瀏覽器，請在 Facebook 中點擊右上角「...」→「在瀏覽器中開啟」";
-              } else if (error.code === error.TIMEOUT) {
-                errorMsg =
-                  "定位逾時，Facebook 瀏覽器可能無法正常定位，請在 Facebook 中點擊右上角「...」→「在瀏覽器中開啟」";
-              }
-
-              showNotification(errorMsg, "error");
-              btnText.textContent = "請使用外部瀏覽器";
-              isLocationValid = false;
-            } else if (isMobileDevice()) {
-              let errorMsg = "無法定位";
-              if (error.code === error.PERMISSION_DENIED) {
-                errorMsg = "位置權限被拒絕，請在瀏覽器設定中開啟";
-                const shouldRetry = confirm(
-                  "位置權限被拒絕。\n\n" +
-                    "請在瀏覽器設定中允許此網站使用您的位置資訊。\n\n" +
-                    "設定完成後，請點擊「確定」重新嘗試。"
-                );
-                if (shouldRetry) {
-                  checkLocation();
-                  return;
-                }
-              } else if (error.code === error.POSITION_UNAVAILABLE) {
-                errorMsg = "無法取得位置資訊，請確認 GPS 已開啟";
-              } else if (error.code === error.TIMEOUT) {
-                errorMsg = "定位逾時，請重試";
-              }
-              showNotification(errorMsg, "error");
-              btnText.textContent = "定位失敗";
-              submitBtn.disabled = true;
-              isLocationValid = false;
-            } else {
-              showNotification("無法定位", "error");
-              btnText.textContent = "定位失敗";
-              submitBtn.disabled = true;
-              isLocationValid = false;
-            }
-          },
-          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-        );
-      }
-
-      function calculateDistance(lat1, lon1, lat2, lon2) {
-        const R = 6371e3;
-        const p1 = (lat1 * Math.PI) / 180;
-        const p2 = (lat2 * Math.PI) / 180;
-        const dp = ((lat2 - lat1) * Math.PI) / 180;
-        const dl = ((lon2 - lon1) * Math.PI) / 180;
-        const a =
-          Math.sin(dp / 2) * Math.sin(dp / 2) +
-          Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) * Math.sin(dl / 2);
-        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       }
 
       function showNotification(msg, type) {
