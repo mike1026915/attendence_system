@@ -60,7 +60,7 @@
       class="max-w-md mx-auto bg-white shadow-lg min-h-screen sm:min-h-0 sm:rounded-xl sm:my-8 overflow-hidden flex flex-col"
     >
       <!-- Header -->
-      <div class="bg-blue-600 p-6 text-white text-center">
+      <div id="appHeader" class="bg-blue-600 p-6 text-white text-center">
         <h1 class="text-2xl font-bold">
           <i class="fas fa-music mr-2"></i>團練點名系統
         </h1>
@@ -68,7 +68,7 @@
       </div>
 
       <!-- Navigation Tabs -->
-      <div class="flex border-b border-gray-200">
+      <div id="navTabs" class="flex border-b border-gray-200">
         <button
           onclick="switchTab('main')"
           id="tab-main"
@@ -320,8 +320,46 @@
         </div>
       </div>
 
+      <!-- VIEW 4: Admin Mode -->
+      <div id="adminView" class="hidden flex-1 flex flex-col">
+        <!-- Admin Header -->
+        <div class="bg-purple-600 p-4 text-white flex justify-between items-center">
+          <div>
+            <h2 class="text-lg font-bold"><i class="fas fa-user-shield mr-2"></i>管理模式</h2>
+            <p class="text-xs opacity-80 mt-0.5" id="adminName"></p>
+          </div>
+          <button onclick="exitAdminMode()" class="text-white bg-purple-700 hover:bg-purple-800 px-3 py-1.5 rounded text-sm font-bold">
+            <i class="fas fa-sign-out-alt mr-1"></i>離開
+          </button>
+        </div>
+
+        <!-- Admin Content -->
+        <div class="flex-1 overflow-y-auto p-4 pb-24 bg-gray-50" id="adminContent">
+          <p class="text-center text-gray-500 text-sm">載入名單中...</p>
+        </div>
+
+        <!-- Admin Footer (sticky submit bar) -->
+        <div class="sticky bottom-0 bg-white border-t border-gray-200 p-4 shadow-lg">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-sm text-gray-600">
+              待送出：<span id="adminPendingCount" class="font-bold text-purple-700">0</span> 筆
+            </span>
+            <span id="adminProgress" class="text-xs text-gray-400 hidden"></span>
+          </div>
+          <button
+            id="adminSubmitBtn"
+            onclick="handleAdminSubmit()"
+            class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+            disabled
+          >
+            <span id="adminSubmitBtnText">送出打卡紀錄</span>
+          </button>
+        </div>
+      </div>
+
       <!-- Footer -->
       <div
+        id="appFooter"
         class="bg-gray-100 p-2 text-center text-xs text-gray-500 space-y-0.5 border-t"
       >
         <div>Powered by Google Sheets</div>
@@ -440,22 +478,8 @@
       window.handleAdminButtonPress = function (e) {
         e.preventDefault();
         adminPressTimer = setTimeout(() => {
-          const currentName = localStorage.getItem("proxyByName") || "";
-          const newName = window.prompt("請輸入代打人名稱：", currentName);
-          if (newName !== null) {
-            if (newName.trim()) {
-              localStorage.setItem("proxyByName", newName.trim());
-              showNotification(
-                `代打人名稱已設定為：${newName.trim()}`,
-                "success",
-              );
-            } else {
-              localStorage.removeItem("proxyByName");
-              showNotification("代打人名稱已清除", "success");
-            }
-            updateProxyModeVisibility();
-          }
           adminPressTimer = null;
+          enterAdminMode();
         }, ADMIN_PRESS_DURATION);
       };
 
@@ -466,6 +490,296 @@
           adminPressTimer = null;
         }
       };
+
+      // --- Admin Mode State ---
+      let adminStatusMap = {};
+      let isAdminMode = false;
+
+      function enterAdminMode() {
+        let adminName = localStorage.getItem("proxyByName") || "";
+        if (!adminName) {
+          adminName = window.prompt("請輸入管理者名稱（用於標記代打紀錄）：");
+          if (!adminName || !adminName.trim()) {
+            showNotification("需要管理者名稱才能進入管理模式", "error");
+            return;
+          }
+          adminName = adminName.trim();
+          localStorage.setItem("proxyByName", adminName);
+          updateProxyModeVisibility();
+        }
+
+        isAdminMode = true;
+        document.getElementById("adminName").textContent = `管理者：${adminName}`;
+
+        mainView.classList.add("hidden");
+        statsView.classList.add("hidden");
+        memberListView.classList.add("hidden");
+        document.getElementById("adminView").classList.remove("hidden");
+
+        document.getElementById("appHeader").classList.add("hidden");
+        document.getElementById("navTabs").classList.add("hidden");
+        document.getElementById("appFooter").classList.add("hidden");
+
+        renderAdminView();
+      }
+
+      window.exitAdminMode = function () {
+        isAdminMode = false;
+        adminStatusMap = {};
+        document.getElementById("adminView").classList.add("hidden");
+        document.getElementById("appHeader").classList.remove("hidden");
+        document.getElementById("navTabs").classList.remove("hidden");
+        document.getElementById("appFooter").classList.remove("hidden");
+        mainView.classList.remove("hidden");
+        fetchData();
+      };
+
+      function renderAdminView() {
+        const container = document.getElementById("adminContent");
+        container.innerHTML = "";
+        adminStatusMap = {};
+
+        const todayStr = new Date().toDateString();
+        const todayRecords = (globalRecords || [])
+          .filter((r) => new Date(r.timestamp).toDateString() === todayStr)
+          .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+        const currentStatusMap = {};
+        todayRecords.forEach((r) => {
+          if (r.name) currentStatusMap[r.name] = validateStatus(r.status);
+        });
+
+        const groups = { Conductor: [], T1: [], T2: [], B1: [], B2: [] };
+        (globalMembers || []).forEach((m) => {
+          const vp = validateVoicePart(m.voicePart);
+          if (vp && m.name && groups[vp]) {
+            groups[vp].push(m.name);
+          }
+        });
+
+        ["T1", "T2", "B1", "B2", "Conductor"].forEach((vp) => {
+          const members = groups[vp];
+          if (members.length === 0) return;
+
+          const section = document.createElement("div");
+          section.className = "mb-4 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden";
+
+          const header = document.createElement("div");
+          header.className = "bg-gray-100 px-4 py-2 border-b border-gray-200 flex justify-between items-center";
+
+          const titleSpan = document.createElement("span");
+          titleSpan.className = "font-bold text-gray-700";
+          titleSpan.textContent = `${vp} (${members.length})`;
+
+          const quickBtns = document.createElement("div");
+          quickBtns.className = "flex gap-1";
+
+          const allPresentBtn = document.createElement("button");
+          allPresentBtn.className = "text-[10px] px-2 py-0.5 rounded bg-green-100 text-green-700 hover:bg-green-200 font-bold";
+          allPresentBtn.textContent = "全出席";
+          allPresentBtn.onclick = () => setGroupStatus(vp, "出席");
+
+          const allLeaveBtn = document.createElement("button");
+          allLeaveBtn.className = "text-[10px] px-2 py-0.5 rounded bg-red-100 text-red-700 hover:bg-red-200 font-bold";
+          allLeaveBtn.textContent = "全請假";
+          allLeaveBtn.onclick = () => setGroupStatus(vp, "請假");
+
+          const clearBtn = document.createElement("button");
+          clearBtn.className = "text-[10px] px-2 py-0.5 rounded bg-gray-100 text-gray-600 hover:bg-gray-200 font-bold";
+          clearBtn.textContent = "清除";
+          clearBtn.onclick = () => setGroupStatus(vp, "");
+
+          quickBtns.appendChild(allPresentBtn);
+          quickBtns.appendChild(allLeaveBtn);
+          quickBtns.appendChild(clearBtn);
+
+          header.appendChild(titleSpan);
+          header.appendChild(quickBtns);
+          section.appendChild(header);
+
+          const list = document.createElement("div");
+          list.className = "divide-y divide-gray-100";
+
+          members.forEach((name) => {
+            const existingStatus = currentStatusMap[name] || "";
+            const key = `${vp}::${name}`;
+            adminStatusMap[key] = { vp, name, status: "", original: existingStatus };
+
+            const row = document.createElement("div");
+            row.className = "px-4 py-2.5 flex justify-between items-center";
+            row.id = `admin-row-${CSS.escape(key)}`;
+
+            const nameSpan = document.createElement("span");
+            nameSpan.className = "text-sm text-gray-800 truncate flex-1 mr-2";
+            const nameText = escapeHtml(name);
+            if (existingStatus) {
+              const badge = existingStatus === "出席" ? "text-green-600" : "text-red-600";
+              nameSpan.innerHTML = `${nameText} <span class="text-[10px] ${badge}">(${existingStatus})</span>`;
+            } else {
+              nameSpan.textContent = nameText;
+            }
+
+            const toggleDiv = document.createElement("div");
+            toggleDiv.className = "flex gap-1 flex-shrink-0";
+            toggleDiv.id = `admin-toggle-${CSS.escape(key)}`;
+
+            const btnNone = createStatusBtn("—", "", key);
+            const btnPresent = createStatusBtn("V", "出席", key);
+            const btnLeave = createStatusBtn("X", "請假", key);
+
+            btnNone.classList.add("bg-gray-200", "text-gray-600");
+
+            toggleDiv.appendChild(btnNone);
+            toggleDiv.appendChild(btnPresent);
+            toggleDiv.appendChild(btnLeave);
+
+            row.appendChild(nameSpan);
+            row.appendChild(toggleDiv);
+            list.appendChild(row);
+          });
+
+          section.appendChild(list);
+          container.appendChild(section);
+        });
+
+        updateAdminPendingCount();
+      }
+
+      function createStatusBtn(label, statusValue, key) {
+        const btn = document.createElement("button");
+        btn.className = "w-8 h-8 rounded-full text-xs font-bold border-2 transition-all";
+        btn.textContent = label;
+        btn.dataset.status = statusValue;
+        btn.dataset.key = key;
+
+        if (statusValue === "出席") {
+          btn.classList.add("border-green-300", "text-green-400", "hover:bg-green-50");
+        } else if (statusValue === "請假") {
+          btn.classList.add("border-red-300", "text-red-400", "hover:bg-red-50");
+        } else {
+          btn.classList.add("border-gray-300", "text-gray-400", "hover:bg-gray-50");
+        }
+
+        btn.onclick = () => setMemberStatus(key, statusValue);
+        return btn;
+      }
+
+      function setMemberStatus(key, status) {
+        if (adminStatusMap[key]) {
+          adminStatusMap[key].status = status;
+        }
+        updateToggleUI(key, status);
+        updateAdminPendingCount();
+      }
+
+      function setGroupStatus(vp, status) {
+        Object.keys(adminStatusMap).forEach((key) => {
+          if (adminStatusMap[key].vp === vp) {
+            adminStatusMap[key].status = status;
+            updateToggleUI(key, status);
+          }
+        });
+        updateAdminPendingCount();
+      }
+
+      function updateToggleUI(key, activeStatus) {
+        const toggleDiv = document.getElementById(`admin-toggle-${CSS.escape(key)}`);
+        if (!toggleDiv) return;
+
+        Array.from(toggleDiv.children).forEach((btn) => {
+          const btnStatus = btn.dataset.status;
+          btn.classList.remove(
+            "bg-green-500", "text-white", "border-green-500",
+            "bg-red-500", "border-red-500",
+            "bg-gray-200", "text-gray-600", "border-gray-400",
+            "bg-green-50", "bg-red-50", "bg-gray-50",
+            "text-green-400", "text-red-400", "text-gray-400",
+            "border-green-300", "border-red-300", "border-gray-300",
+            "scale-110", "shadow-md"
+          );
+
+          if (btnStatus === activeStatus) {
+            if (btnStatus === "出席") {
+              btn.classList.add("bg-green-500", "text-white", "border-green-500", "scale-110", "shadow-md");
+            } else if (btnStatus === "請假") {
+              btn.classList.add("bg-red-500", "text-white", "border-red-500", "scale-110", "shadow-md");
+            } else {
+              btn.classList.add("bg-gray-200", "text-gray-600", "border-gray-400", "scale-110");
+            }
+          } else {
+            if (btnStatus === "出席") {
+              btn.classList.add("border-green-300", "text-green-400", "hover:bg-green-50");
+            } else if (btnStatus === "請假") {
+              btn.classList.add("border-red-300", "text-red-400", "hover:bg-red-50");
+            } else {
+              btn.classList.add("border-gray-300", "text-gray-400", "hover:bg-gray-50");
+            }
+          }
+        });
+      }
+
+      function updateAdminPendingCount() {
+        const pending = Object.values(adminStatusMap).filter((m) => m.status !== "");
+        const count = pending.length;
+        document.getElementById("adminPendingCount").textContent = count;
+        document.getElementById("adminSubmitBtn").disabled = count === 0;
+      }
+
+      async function handleAdminSubmit() {
+        const pending = Object.values(adminStatusMap).filter((m) => m.status !== "");
+        if (pending.length === 0) {
+          showNotification("沒有需要送出的紀錄", "error");
+          return;
+        }
+
+        const adminName = localStorage.getItem("proxyByName") || "admin";
+        const btn = document.getElementById("adminSubmitBtn");
+        const btnText = document.getElementById("adminSubmitBtnText");
+        const progressEl = document.getElementById("adminProgress");
+
+        btn.disabled = true;
+        progressEl.classList.remove("hidden");
+
+        let successCount = 0;
+        let failCount = 0;
+
+        for (let i = 0; i < pending.length; i++) {
+          const m = pending[i];
+          progressEl.textContent = `${i + 1} / ${pending.length}`;
+          btnText.textContent = `送出中 (${i + 1}/${pending.length})...`;
+
+          const formData = {
+            name: m.name,
+            voicePart: m.vp,
+            status: m.status,
+            note: `proxy:${adminName}`,
+          };
+
+          try {
+            await fetch(API_URL, {
+              method: "POST",
+              body: JSON.stringify(formData),
+            });
+            successCount++;
+          } catch (err) {
+            failCount++;
+            console.error(`Failed to submit for ${m.name}:`, err);
+          }
+        }
+
+        progressEl.classList.add("hidden");
+        btnText.textContent = "送出打卡紀錄";
+        btn.disabled = false;
+
+        if (failCount === 0) {
+          showNotification(`全部送出成功 (${successCount} 筆)`, "success");
+        } else {
+          showNotification(`送出完成：成功 ${successCount} 筆，失敗 ${failCount} 筆`, "error");
+        }
+
+        await fetchData();
+        renderAdminView();
+      }
 
       // Global Data Storage
       let globalMembers = [];
@@ -504,6 +818,13 @@
         mainView.classList.add("hidden");
         statsView.classList.add("hidden");
         memberListView.classList.add("hidden");
+        document.getElementById("adminView").classList.add("hidden");
+        if (isAdminMode) {
+          document.getElementById("appHeader").classList.remove("hidden");
+          document.getElementById("navTabs").classList.remove("hidden");
+          document.getElementById("appFooter").classList.remove("hidden");
+          isAdminMode = false;
+        }
 
         // Reset all tabs styles
         [tabMain, tabStats].forEach((tab) => {
