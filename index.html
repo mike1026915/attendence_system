@@ -465,7 +465,7 @@
         class="bg-gray-100 p-2 text-center text-xs text-gray-500 space-y-0.5 border-t"
       >
         <div>Powered by Google Sheets</div>
-        <div class="text-gray-400">API v5.1 · App v5.3.2</div>
+        <div class="text-gray-400">API v5.1 · App v5.3.3</div>
         <div class="mt-2 flex justify-center items-center gap-4">
           <button
             onclick="exportAttendanceImage()"
@@ -1733,8 +1733,8 @@
         return !String(r.note || "").includes("proxy:");
       }
 
-      // Consecutive practice days attended, newest first.
-      // Only 出席 checked in by yourself counts; a proxy check-in breaks the streak
+      // Consecutive practice days checked in by yourself (出席 or 請假), newest first.
+      // No record or a proxy check-in breaks the streak
       function calcStreak(records, name) {
         const latest = latestByPracticeDay(records);
         const today = new Date().toDateString();
@@ -1744,14 +1744,14 @@
         )) {
           const r = latest[day][name];
           if (day === today && !r) continue; // not checked in yet today: don't break
-          if (!r || r.status !== "出席" || !isSelfCheckIn(r)) break;
+          if (!r || !isSelfCheckIn(r)) break;
           streak++;
         }
         return streak;
       }
 
-      // Attendance rate since the person's first practice-day record, and how
-      // many of those attendances were checked in by themselves (not proxy).
+      // Since the person's first practice-day record: practice days total,
+      // days attended, and days they checked in themselves (出席 or 請假, not proxy).
       function calcRates(records, name) {
         const latest = latestByPracticeDay(records);
         const days = Object.keys(latest).sort(
@@ -1764,10 +1764,9 @@
         let self = 0;
         days.slice(first).forEach((day) => {
           const r = latest[day][name];
-          if (r && r.status === "出席") {
-            attended++;
-            if (isSelfCheckIn(r)) self++;
-          }
+          if (!r) return;
+          if (r.status === "出席") attended++;
+          if (isSelfCheckIn(r)) self++; // 出席 or 請假, as long as not proxy
         });
         return { attended, total, self };
       }
@@ -1840,8 +1839,8 @@
             `你是今天第 ${order.indexOf(name) + 1} 位`,
             `${voicePart} 今天已到 ${total ? `${arrived}/${total}` : `${arrived} 人`}`,
           ];
-          if (rates && rates.attended)
-            lines.push(`自主打卡 ${pct(rates.self, rates.attended)}`);
+          if (rates)
+            lines.push(`自主打卡 ${pct(rates.self, rates.total)}`);
           quickDone.innerHTML = "";
           lines.forEach((text, i) => {
             const p = document.createElement("p");
