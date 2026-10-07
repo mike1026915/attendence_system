@@ -114,10 +114,18 @@
             <button
               id="quickBtn"
               type="button"
-              onclick="quickCheckIn()"
+              onclick="quickCheckIn('出席')"
               class="mt-3 w-full bg-green-600 hover:bg-green-700 text-white text-xl font-bold py-4 rounded-lg shadow-md disabled:opacity-50"
             >
-              ✅ 我到了
+              ✅ 出席
+            </button>
+            <button
+              id="quickLeaveBtn"
+              type="button"
+              onclick="quickCheckIn('請假')"
+              class="mt-2 w-full bg-white hover:bg-red-50 text-red-600 border-2 border-red-200 font-bold py-2 rounded-lg disabled:opacity-50"
+            >
+              請假
             </button>
             <div
               id="quickDone"
@@ -127,12 +135,13 @@
               id="quickStreak"
               class="mt-2 text-sm text-orange-600 font-bold"
             ></p>
+            <p id="quickRate" class="text-sm text-gray-600"></p>
             <button
               type="button"
               onclick="toggleFullForm()"
               class="mt-3 text-sm text-blue-600 hover:underline"
             >
-              請假 / 換人 →
+              選擇別人 →
             </button>
           </div>
         </div>
@@ -445,7 +454,7 @@
         class="bg-gray-100 p-2 text-center text-xs text-gray-500 space-y-0.5 border-t"
       >
         <div>Powered by Google Sheets</div>
-        <div class="text-gray-400">API v5.1 · App v5.2.0</div>
+        <div class="text-gray-400">API v5.1 · App v5.3.0</div>
         <div class="mt-2 flex justify-center items-center gap-4">
           <button
             onclick="exportAttendanceImage()"
@@ -1778,11 +1787,24 @@
         const latest = {};
         todays.forEach((r) => (latest[r.name] = r));
         const checkedIn = !!latest[name] && latest[name].status === "出席";
+        const onLeave = !!latest[name] && latest[name].status === "請假";
 
-        const quickBtn = document.getElementById("quickBtn");
         const quickDone = document.getElementById("quickDone");
-        quickBtn.classList.toggle("hidden", checkedIn);
-        quickDone.classList.toggle("hidden", !checkedIn);
+        // 出席: hide both buttons. 請假: keep 出席 so they can still come.
+        document.getElementById("quickBtn").classList.toggle("hidden", checkedIn);
+        document
+          .getElementById("quickLeaveBtn")
+          .classList.toggle("hidden", checkedIn || onLeave);
+        quickDone.classList.toggle("hidden", !checkedIn && !onLeave);
+        if (onLeave) {
+          quickDone.innerHTML = "";
+          const p = document.createElement("p");
+          p.className = "font-bold text-red-600";
+          p.textContent = "📝 今天已請假";
+          quickDone.appendChild(p);
+        }
+        const rates = calcRates(globalRecords, name);
+        const pct = (n, d) => `${Math.round((n / d) * 100)}%（${n}/${d} 次）`;
         if (checkedIn) {
           // Rank by first 出席 time among people still marked 出席
           const order = [];
@@ -1805,13 +1827,8 @@
             `你是今天第 ${order.indexOf(name) + 1} 位`,
             `${voicePart} 今天已到 ${total ? `${arrived}/${total}` : `${arrived} 人`}`,
           ];
-          const rates = calcRates(globalRecords, name);
-          if (rates) {
-            const pct = (n, d) => `${Math.round((n / d) * 100)}%（${n}/${d} 次）`;
-            lines.push(`出席率 ${pct(rates.attended, rates.total)}`);
-            if (rates.attended)
-              lines.push(`自主打卡 ${pct(rates.self, rates.attended)}`);
-          }
+          if (rates && rates.attended)
+            lines.push(`自主打卡 ${pct(rates.self, rates.attended)}`);
           quickDone.innerHTML = "";
           lines.forEach((text, i) => {
             const p = document.createElement("p");
@@ -1823,7 +1840,10 @@
 
         const streak = calcStreak(globalRecords, name);
         document.getElementById("quickStreak").textContent =
-          streak > 0 ? `🔥 已連續出席 ${streak} 次` : "今天開始累積連續出席 🔥";
+          streak > 0 ? `🔥 已連續打卡 ${streak} 次` : "今天開始累積連續打卡 🔥";
+        document.getElementById("quickRate").textContent = rates
+          ? `目前總出席率 ${pct(rates.attended, rates.total)}`
+          : "";
       }
 
       window.toggleFullForm = function () {
@@ -1833,23 +1853,26 @@
           .classList.toggle("hidden", !fullFormOpen);
       };
 
-      window.quickCheckIn = async function () {
+      window.quickCheckIn = async function (status) {
         const { name, voicePart } = getSavedUser();
-        const quickBtn = document.getElementById("quickBtn");
-        quickBtn.disabled = true;
-        quickBtn.textContent = "處理中...";
+        const btn = document.getElementById(
+          status === "請假" ? "quickLeaveBtn" : "quickBtn",
+        );
+        const label = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = "處理中...";
         try {
           await fetch(API_URL, {
             method: "POST",
-            body: JSON.stringify({ name, voicePart, status: "出席", note: "" }),
+            body: JSON.stringify({ name, voicePart, status, note: "" }),
           });
-          showNotification(`打卡成功：${name}`, "success");
+          showNotification(`${status === "請假" ? "請假" : "打卡"}成功：${name}`, "success");
           await fetchData();
         } catch (error) {
           showNotification("送出失敗", "error");
         } finally {
-          quickBtn.disabled = false;
-          quickBtn.textContent = "✅ 我到了";
+          btn.disabled = false;
+          btn.textContent = label;
         }
       };
 
