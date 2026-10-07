@@ -465,7 +465,7 @@
         class="bg-gray-100 p-2 text-center text-xs text-gray-500 space-y-0.5 border-t"
       >
         <div>Powered by Google Sheets</div>
-        <div class="text-gray-400">API v5.1 · App v5.3.1</div>
+        <div class="text-gray-400">API v5.1 · App v5.3.2</div>
         <div class="mt-2 flex justify-center items-center gap-4">
           <button
             onclick="exportAttendanceImage()"
@@ -1823,14 +1823,10 @@
         const rates = calcRates(globalRecords, name);
         const pct = (n, d) => `${Math.round((n / d) * 100)}%（${n}/${d} 次）`;
         if (checkedIn) {
-          // Rank by first 出席 time among people still marked 出席
+          // Rank by first 出席 time today, even if they later switched to 請假
           const order = [];
           todays.forEach((r) => {
-            if (
-              r.status === "出席" &&
-              latest[r.name].status === "出席" &&
-              !order.includes(r.name)
-            )
+            if (r.status === "出席" && !order.includes(r.name))
               order.push(r.name);
           });
           const arrived = Object.values(latest).filter(
