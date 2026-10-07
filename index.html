@@ -465,7 +465,7 @@
         class="bg-gray-100 p-2 text-center text-xs text-gray-500 space-y-0.5 border-t"
       >
         <div>Powered by Google Sheets</div>
-        <div class="text-gray-400">API v5.1 · App v5.3.3</div>
+        <div class="text-gray-400">API v5.1 · App v5.3.4</div>
         <div class="mt-2 flex justify-center items-center gap-4">
           <button
             onclick="exportAttendanceImage()"
@@ -1707,7 +1707,8 @@
       }
 
       // Practice is every Monday; add extra practice dates here (YYYY-MM-DD).
-      const EXTRA_PRACTICE_DAYS = [];
+      // 2026-09-22: practice moved from Mon 09-21 (no records that day, so it's skipped automatically)
+      const EXTRA_PRACTICE_DAYS = ["2026-09-22"];
 
       function isPracticeDay(date) {
         const ymd = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -1750,13 +1751,14 @@
         return streak;
       }
 
-      // Since the person's first practice-day record: practice days total,
+      // Since the person's first practice-day record (excluding today): practice days total,
       // days attended, and days they checked in themselves (出席 or 請假, not proxy).
       function calcRates(records, name) {
         const latest = latestByPracticeDay(records);
-        const days = Object.keys(latest).sort(
-          (a, b) => new Date(a) - new Date(b),
-        );
+        const today = new Date().toDateString();
+        const days = Object.keys(latest)
+          .filter((day) => day !== today) // today isn't counted until it's over
+          .sort((a, b) => new Date(a) - new Date(b));
         const first = days.findIndex((day) => latest[day][name]);
         if (first < 0) return null;
         const total = days.length - first;
