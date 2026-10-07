@@ -445,7 +445,7 @@
         class="bg-gray-100 p-2 text-center text-xs text-gray-500 space-y-0.5 border-t"
       >
         <div>Powered by Google Sheets</div>
-        <div class="text-gray-400">API v5.1 · App v5.1.1</div>
+        <div class="text-gray-400">API v5.1 · App v5.2.0</div>
         <div class="mt-2 flex justify-center items-center gap-4">
           <button
             onclick="exportAttendanceImage()"
@@ -1694,31 +1694,62 @@
         return date.getDay() === 1 || EXTRA_PRACTICE_DAYS.includes(ymd);
       }
 
-      // Consecutive practice days attended, newest first.
+      // day -> { name: last record of that day }, practice days only.
       // Only practice days that have at least one record count, so a Monday with no practice (holiday) is skipped.
-      function calcStreak(records, name) {
-        const latest = {}; // day -> { name: counts? } (last record of the day wins)
+      function latestByPracticeDay(records) {
+        const latest = {};
         [...records]
           .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
           .forEach((r) => {
             const date = new Date(r.timestamp);
             if (!isPracticeDay(date)) return;
             const day = date.toDateString();
-            // Only 出席 checked in by yourself counts; a proxy check-in breaks the streak
-            const isProxy = String(r.note || "").includes("proxy:");
-            (latest[day] = latest[day] || {})[r.name] = r.status === "出席" && !isProxy;
+            (latest[day] = latest[day] || {})[r.name] = r;
           });
+        return latest;
+      }
+
+      function isSelfCheckIn(r) {
+        return !String(r.note || "").includes("proxy:");
+      }
+
+      // Consecutive practice days attended, newest first.
+      // Only 出席 checked in by yourself counts; a proxy check-in breaks the streak
+      function calcStreak(records, name) {
+        const latest = latestByPracticeDay(records);
         const today = new Date().toDateString();
         let streak = 0;
         for (const day of Object.keys(latest).sort(
           (a, b) => new Date(b) - new Date(a),
         )) {
-          const counts = latest[day][name];
-          if (day === today && counts === undefined) continue; // not checked in yet today: don't break
-          if (!counts) break;
+          const r = latest[day][name];
+          if (day === today && !r) continue; // not checked in yet today: don't break
+          if (!r || r.status !== "出席" || !isSelfCheckIn(r)) break;
           streak++;
         }
         return streak;
+      }
+
+      // Attendance rate since the person's first practice-day record, and how
+      // many of those attendances were checked in by themselves (not proxy).
+      function calcRates(records, name) {
+        const latest = latestByPracticeDay(records);
+        const days = Object.keys(latest).sort(
+          (a, b) => new Date(a) - new Date(b),
+        );
+        const first = days.findIndex((day) => latest[day][name]);
+        if (first < 0) return null;
+        const total = days.length - first;
+        let attended = 0;
+        let self = 0;
+        days.slice(first).forEach((day) => {
+          const r = latest[day][name];
+          if (r && r.status === "出席") {
+            attended++;
+            if (isSelfCheckIn(r)) self++;
+          }
+        });
+        return { attended, total, self };
       }
 
       function renderQuickCard() {
@@ -1769,12 +1800,20 @@
           const total = globalMembers.filter(
             (m) => m.voicePart === voicePart,
           ).length;
-          quickDone.innerHTML = "";
-          [
+          const lines = [
             "✅ 今天已打卡",
             `你是今天第 ${order.indexOf(name) + 1} 位`,
             `${voicePart} 今天已到 ${total ? `${arrived}/${total}` : `${arrived} 人`}`,
-          ].forEach((text, i) => {
+          ];
+          const rates = calcRates(globalRecords, name);
+          if (rates) {
+            const pct = (n, d) => `${Math.round((n / d) * 100)}%（${n}/${d} 次）`;
+            lines.push(`出席率 ${pct(rates.attended, rates.total)}`);
+            if (rates.attended)
+              lines.push(`自主打卡 ${pct(rates.self, rates.attended)}`);
+          }
+          quickDone.innerHTML = "";
+          lines.forEach((text, i) => {
             const p = document.createElement("p");
             p.className = i === 0 ? "font-bold text-green-700" : "text-sm";
             p.textContent = text;
