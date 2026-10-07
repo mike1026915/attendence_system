@@ -445,7 +445,7 @@
         class="bg-gray-100 p-2 text-center text-xs text-gray-500 space-y-0.5 border-t"
       >
         <div>Powered by Google Sheets</div>
-        <div class="text-gray-400">API v5.1 · App v5.1.0</div>
+        <div class="text-gray-400">API v5.1 · App v5.1.1</div>
         <div class="mt-2 flex justify-center items-center gap-4">
           <button
             onclick="exportAttendanceImage()"
@@ -1697,23 +1697,25 @@
       // Consecutive practice days attended, newest first.
       // Only practice days that have at least one record count, so a Monday with no practice (holiday) is skipped.
       function calcStreak(records, name) {
-        const latest = {}; // day -> { name: status } (last record of the day wins)
+        const latest = {}; // day -> { name: counts? } (last record of the day wins)
         [...records]
           .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
           .forEach((r) => {
             const date = new Date(r.timestamp);
             if (!isPracticeDay(date)) return;
             const day = date.toDateString();
-            (latest[day] = latest[day] || {})[r.name] = r.status;
+            // Only 出席 checked in by yourself counts; a proxy check-in breaks the streak
+            const isProxy = String(r.note || "").includes("proxy:");
+            (latest[day] = latest[day] || {})[r.name] = r.status === "出席" && !isProxy;
           });
         const today = new Date().toDateString();
         let streak = 0;
         for (const day of Object.keys(latest).sort(
           (a, b) => new Date(b) - new Date(a),
         )) {
-          const status = latest[day][name];
-          if (day === today && !status) continue; // not checked in yet today: don't break
-          if (status !== "出席") break;
+          const counts = latest[day][name];
+          if (day === today && counts === undefined) continue; // not checked in yet today: don't break
+          if (!counts) break;
           streak++;
         }
         return streak;
