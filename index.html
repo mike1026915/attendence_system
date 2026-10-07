@@ -81,7 +81,7 @@
           id="tab-stats"
           class="tab-btn w-1/2 py-3 text-center font-bold text-gray-500 border-b-2 border-transparent focus:outline-none hover:bg-gray-50"
         >
-          <i class="fas fa-chart-pie mr-1"></i> 統計
+          <i class="fas fa-chart-pie mr-1"></i> 今日統計
         </button>
       </div>
 
@@ -93,8 +93,52 @@
 
       <!-- VIEW 1: Main Attendance Form -->
       <div id="mainView" class="flex-1 flex flex-col">
+        <!-- Hint for Facebook in-app browser, where saved name may not persist -->
+        <p
+          id="fbHint"
+          class="hidden mx-6 mt-4 p-3 rounded bg-yellow-50 border border-yellow-200 text-xs text-yellow-800"
+        >
+          💡
+          小技巧：點右上角「⋯」→「在外部瀏覽器開啟」，再「加入主畫面」，以後點圖示就能一鍵打卡。
+        </p>
+
+        <!-- One-tap Check-in (shown when name is remembered) -->
+        <div id="quickCard" class="hidden p-6 pb-2">
+          <div
+            class="rounded-xl border-2 border-green-200 bg-green-50 p-4 text-center"
+          >
+            <p class="text-gray-700">
+              嗨，<b id="quickName"></b>
+              <span id="quickVoice" class="text-xs text-gray-500"></span>
+            </p>
+            <button
+              id="quickBtn"
+              type="button"
+              onclick="quickCheckIn()"
+              class="mt-3 w-full bg-green-600 hover:bg-green-700 text-white text-xl font-bold py-4 rounded-lg shadow-md disabled:opacity-50"
+            >
+              ✅ 我到了
+            </button>
+            <div
+              id="quickDone"
+              class="hidden mt-2 space-y-1 text-gray-700"
+            ></div>
+            <p
+              id="quickStreak"
+              class="mt-2 text-sm text-orange-600 font-bold"
+            ></p>
+            <button
+              type="button"
+              onclick="toggleFullForm()"
+              class="mt-3 text-sm text-blue-600 hover:underline"
+            >
+              請假 / 換人 →
+            </button>
+          </div>
+        </div>
+
         <!-- Form Section -->
-        <div class="p-6 pb-2">
+        <div id="formSection" class="p-6 pb-2">
           <form id="attendanceForm" class="space-y-4">
             <!-- 1. Voice Part Select -->
             <div>
@@ -323,18 +367,27 @@
       <!-- VIEW 4: Admin Mode -->
       <div id="adminView" class="hidden flex-1 flex flex-col">
         <!-- Admin Header -->
-        <div class="bg-purple-600 p-4 text-white flex justify-between items-center">
+        <div
+          class="bg-purple-600 p-4 text-white flex justify-between items-center"
+        >
           <div>
-            <h2 class="text-lg font-bold"><i class="fas fa-user-shield mr-2"></i>管理模式</h2>
+            <h2 class="text-lg font-bold">
+              <i class="fas fa-user-shield mr-2"></i>管理模式
+            </h2>
             <p class="text-xs opacity-80 mt-0.5" id="adminName"></p>
           </div>
-          <button onclick="exitAdminMode()" class="text-white bg-purple-700 hover:bg-purple-800 px-3 py-1.5 rounded text-sm font-bold">
+          <button
+            onclick="exitAdminMode()"
+            class="text-white bg-purple-700 hover:bg-purple-800 px-3 py-1.5 rounded text-sm font-bold"
+          >
             <i class="fas fa-sign-out-alt mr-1"></i>離開
           </button>
         </div>
 
         <!-- Admin Options -->
-        <div class="px-4 py-2 bg-purple-50 border-b border-purple-100 flex items-center justify-between">
+        <div
+          class="px-4 py-2 bg-purple-50 border-b border-purple-100 flex items-center justify-between"
+        >
           <label class="flex items-center cursor-pointer">
             <input
               type="checkbox"
@@ -350,17 +403,30 @@
         </div>
 
         <!-- Admin Content -->
-        <div class="flex-1 overflow-y-auto p-4 pb-24 bg-gray-50" id="adminContent">
+        <div
+          class="flex-1 overflow-y-auto p-4 pb-24 bg-gray-50"
+          id="adminContent"
+        >
           <p class="text-center text-gray-500 text-sm">載入名單中...</p>
         </div>
 
         <!-- Admin Footer (sticky submit bar) -->
-        <div class="sticky bottom-0 bg-white border-t border-gray-200 p-4 shadow-lg">
+        <div
+          class="sticky bottom-0 bg-white border-t border-gray-200 p-4 shadow-lg"
+        >
           <div class="flex justify-between items-center mb-2">
             <span class="text-sm text-gray-600">
-              待送出：<span id="adminPendingCount" class="font-bold text-purple-700">0</span> 筆
+              待送出：<span
+                id="adminPendingCount"
+                class="font-bold text-purple-700"
+                >0</span
+              >
+              筆
             </span>
-            <span id="adminProgress" class="text-xs text-gray-400 hidden"></span>
+            <span
+              id="adminProgress"
+              class="text-xs text-gray-400 hidden"
+            ></span>
           </div>
           <button
             id="adminSubmitBtn"
@@ -379,7 +445,7 @@
         class="bg-gray-100 p-2 text-center text-xs text-gray-500 space-y-0.5 border-t"
       >
         <div>Powered by Google Sheets</div>
-        <div class="text-gray-400">API v5.1 · App v5.0.0</div>
+        <div class="text-gray-400">API v5.1 · App v5.1.0</div>
         <div class="mt-2 flex justify-center items-center gap-4">
           <button
             onclick="exportAttendanceImage()"
@@ -525,7 +591,8 @@
         }
 
         isAdminMode = true;
-        document.getElementById("adminName").textContent = `管理者：${adminName}`;
+        document.getElementById("adminName").textContent =
+          `管理者：${adminName}`;
 
         mainView.classList.add("hidden");
         statsView.classList.add("hidden");
@@ -578,10 +645,12 @@
           if (members.length === 0) return;
 
           const section = document.createElement("div");
-          section.className = "mb-4 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden";
+          section.className =
+            "mb-4 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden";
 
           const header = document.createElement("div");
-          header.className = "bg-gray-100 px-4 py-2 border-b border-gray-200 flex justify-between items-center";
+          header.className =
+            "bg-gray-100 px-4 py-2 border-b border-gray-200 flex justify-between items-center";
 
           const titleSpan = document.createElement("span");
           titleSpan.className = "font-bold text-gray-700";
@@ -591,17 +660,20 @@
           quickBtns.className = "flex gap-1";
 
           const allPresentBtn = document.createElement("button");
-          allPresentBtn.className = "text-[10px] px-2 py-0.5 rounded bg-green-100 text-green-700 hover:bg-green-200 font-bold";
+          allPresentBtn.className =
+            "text-[10px] px-2 py-0.5 rounded bg-green-100 text-green-700 hover:bg-green-200 font-bold";
           allPresentBtn.textContent = "全出席";
           allPresentBtn.onclick = () => setGroupStatus(vp, "出席");
 
           const allLeaveBtn = document.createElement("button");
-          allLeaveBtn.className = "text-[10px] px-2 py-0.5 rounded bg-red-100 text-red-700 hover:bg-red-200 font-bold";
+          allLeaveBtn.className =
+            "text-[10px] px-2 py-0.5 rounded bg-red-100 text-red-700 hover:bg-red-200 font-bold";
           allLeaveBtn.textContent = "全請假";
           allLeaveBtn.onclick = () => setGroupStatus(vp, "請假");
 
           const clearBtn = document.createElement("button");
-          clearBtn.className = "text-[10px] px-2 py-0.5 rounded bg-gray-100 text-gray-600 hover:bg-gray-200 font-bold";
+          clearBtn.className =
+            "text-[10px] px-2 py-0.5 rounded bg-gray-100 text-gray-600 hover:bg-gray-200 font-bold";
           clearBtn.textContent = "清除";
           clearBtn.onclick = () => setGroupStatus(vp, "");
 
@@ -619,7 +691,12 @@
           members.forEach((name) => {
             const existingStatus = currentStatusMap[name] || "";
             const key = `${vp}::${name}`;
-            adminStatusMap[key] = { vp, name, status: "", original: existingStatus };
+            adminStatusMap[key] = {
+              vp,
+              name,
+              status: "",
+              original: existingStatus,
+            };
 
             const row = document.createElement("div");
             row.className = "px-4 py-2.5 flex justify-between items-center";
@@ -629,7 +706,8 @@
             nameSpan.className = "text-sm text-gray-800 truncate flex-1 mr-2";
             const nameText = escapeHtml(name);
             if (existingStatus) {
-              const badge = existingStatus === "出席" ? "text-green-600" : "text-red-600";
+              const badge =
+                existingStatus === "出席" ? "text-green-600" : "text-red-600";
               nameSpan.innerHTML = `${nameText} <span class="text-[10px] ${badge}">(${existingStatus})</span>`;
             } else {
               nameSpan.textContent = nameText;
@@ -663,17 +741,30 @@
 
       function createStatusBtn(label, statusValue, key) {
         const btn = document.createElement("button");
-        btn.className = "w-8 h-8 rounded-full text-xs font-bold border-2 transition-all";
+        btn.className =
+          "w-8 h-8 rounded-full text-xs font-bold border-2 transition-all";
         btn.textContent = label;
         btn.dataset.status = statusValue;
         btn.dataset.key = key;
 
         if (statusValue === "出席") {
-          btn.classList.add("border-green-300", "text-green-400", "hover:bg-green-50");
+          btn.classList.add(
+            "border-green-300",
+            "text-green-400",
+            "hover:bg-green-50",
+          );
         } else if (statusValue === "請假") {
-          btn.classList.add("border-red-300", "text-red-400", "hover:bg-red-50");
+          btn.classList.add(
+            "border-red-300",
+            "text-red-400",
+            "hover:bg-red-50",
+          );
         } else {
-          btn.classList.add("border-gray-300", "text-gray-400", "hover:bg-gray-50");
+          btn.classList.add(
+            "border-gray-300",
+            "text-gray-400",
+            "hover:bg-gray-50",
+          );
         }
 
         btn.onclick = () => setMemberStatus(key, statusValue);
@@ -699,50 +790,97 @@
       }
 
       function updateToggleUI(key, activeStatus) {
-        const toggleDiv = document.getElementById(`admin-toggle-${CSS.escape(key)}`);
+        const toggleDiv = document.getElementById(
+          `admin-toggle-${CSS.escape(key)}`,
+        );
         if (!toggleDiv) return;
 
         Array.from(toggleDiv.children).forEach((btn) => {
           const btnStatus = btn.dataset.status;
           btn.classList.remove(
-            "bg-green-500", "text-white", "border-green-500",
-            "bg-red-500", "border-red-500",
-            "bg-gray-200", "text-gray-600", "border-gray-400",
-            "bg-green-50", "bg-red-50", "bg-gray-50",
-            "text-green-400", "text-red-400", "text-gray-400",
-            "border-green-300", "border-red-300", "border-gray-300",
-            "scale-110", "shadow-md"
+            "bg-green-500",
+            "text-white",
+            "border-green-500",
+            "bg-red-500",
+            "border-red-500",
+            "bg-gray-200",
+            "text-gray-600",
+            "border-gray-400",
+            "bg-green-50",
+            "bg-red-50",
+            "bg-gray-50",
+            "text-green-400",
+            "text-red-400",
+            "text-gray-400",
+            "border-green-300",
+            "border-red-300",
+            "border-gray-300",
+            "scale-110",
+            "shadow-md",
           );
 
           if (btnStatus === activeStatus) {
             if (btnStatus === "出席") {
-              btn.classList.add("bg-green-500", "text-white", "border-green-500", "scale-110", "shadow-md");
+              btn.classList.add(
+                "bg-green-500",
+                "text-white",
+                "border-green-500",
+                "scale-110",
+                "shadow-md",
+              );
             } else if (btnStatus === "請假") {
-              btn.classList.add("bg-red-500", "text-white", "border-red-500", "scale-110", "shadow-md");
+              btn.classList.add(
+                "bg-red-500",
+                "text-white",
+                "border-red-500",
+                "scale-110",
+                "shadow-md",
+              );
             } else {
-              btn.classList.add("bg-gray-200", "text-gray-600", "border-gray-400", "scale-110");
+              btn.classList.add(
+                "bg-gray-200",
+                "text-gray-600",
+                "border-gray-400",
+                "scale-110",
+              );
             }
           } else {
             if (btnStatus === "出席") {
-              btn.classList.add("border-green-300", "text-green-400", "hover:bg-green-50");
+              btn.classList.add(
+                "border-green-300",
+                "text-green-400",
+                "hover:bg-green-50",
+              );
             } else if (btnStatus === "請假") {
-              btn.classList.add("border-red-300", "text-red-400", "hover:bg-red-50");
+              btn.classList.add(
+                "border-red-300",
+                "text-red-400",
+                "hover:bg-red-50",
+              );
             } else {
-              btn.classList.add("border-gray-300", "text-gray-400", "hover:bg-gray-50");
+              btn.classList.add(
+                "border-gray-300",
+                "text-gray-400",
+                "hover:bg-gray-50",
+              );
             }
           }
         });
       }
 
       function updateAdminPendingCount() {
-        const pending = Object.values(adminStatusMap).filter((m) => m.status !== "");
+        const pending = Object.values(adminStatusMap).filter(
+          (m) => m.status !== "",
+        );
         const count = pending.length;
         document.getElementById("adminPendingCount").textContent = count;
         document.getElementById("adminSubmitBtn").disabled = count === 0;
       }
 
       async function handleAdminSubmit() {
-        const pending = Object.values(adminStatusMap).filter((m) => m.status !== "");
+        const pending = Object.values(adminStatusMap).filter(
+          (m) => m.status !== "",
+        );
         if (pending.length === 0) {
           showNotification("沒有需要送出的紀錄", "error");
           return;
@@ -791,7 +929,10 @@
         if (failCount === 0) {
           showNotification(`全部送出成功 (${successCount} 筆)`, "success");
         } else {
-          showNotification(`送出完成：成功 ${successCount} 筆，失敗 ${failCount} 筆`, "error");
+          showNotification(
+            `送出完成：成功 ${successCount} 筆，失敗 ${failCount} 筆`,
+            "error",
+          );
         }
 
         await fetchData();
@@ -806,6 +947,11 @@
       window.addEventListener("load", () => {
         // Initialize proxy mode visibility on load
         updateProxyModeVisibility();
+        // Show one-tap check-in right away from localStorage; stats fill in after fetch
+        renderQuickCard();
+        if (/FBAN|FBAV|FB_IAB/.test(navigator.userAgent)) {
+          document.getElementById("fbHint").classList.remove("hidden");
+        }
         // Register Service Worker for PWA
         if ("serviceWorker" in navigator) {
           navigator.serviceWorker
@@ -906,6 +1052,9 @@
           if (!hasLoadedSaved && voiceSelect.value) {
             handleVoicePartChange();
           }
+
+          dataLoaded = true;
+          renderQuickCard();
         } catch (error) {
           console.error("Error:", error);
           recordList.innerHTML =
@@ -1493,10 +1642,12 @@
           });
           showNotification(`打卡成功：${finalName}`, "success");
 
-          // Save user selections to localStorage
+          // Save user selections to localStorage (not when checking in for someone else)
           try {
-            localStorage.setItem("savedVoicePart", voiceSelect.value);
-            localStorage.setItem("savedName", finalName);
+            if (!isProxyMode) {
+              localStorage.setItem("savedVoicePart", voiceSelect.value);
+              localStorage.setItem("savedName", finalName);
+            }
           } catch (error) {
             console.warn("Failed to save to localStorage:", error);
           }
@@ -1519,6 +1670,147 @@
           btnText.textContent = "送出打卡";
         }
       });
+
+      // --- 5b. One-tap Check-in, Rank & Streak ---
+      let fullFormOpen = false;
+      let dataLoaded = false;
+
+      function getSavedUser() {
+        try {
+          return {
+            name: localStorage.getItem("savedName"),
+            voicePart: localStorage.getItem("savedVoicePart"),
+          };
+        } catch (e) {
+          return {};
+        }
+      }
+
+      // Practice is every Monday; add extra practice dates here (YYYY-MM-DD).
+      const EXTRA_PRACTICE_DAYS = [];
+
+      function isPracticeDay(date) {
+        const ymd = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+        return date.getDay() === 1 || EXTRA_PRACTICE_DAYS.includes(ymd);
+      }
+
+      // Consecutive practice days attended, newest first.
+      // Only practice days that have at least one record count, so a Monday with no practice (holiday) is skipped.
+      function calcStreak(records, name) {
+        const latest = {}; // day -> { name: status } (last record of the day wins)
+        [...records]
+          .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+          .forEach((r) => {
+            const date = new Date(r.timestamp);
+            if (!isPracticeDay(date)) return;
+            const day = date.toDateString();
+            (latest[day] = latest[day] || {})[r.name] = r.status;
+          });
+        const today = new Date().toDateString();
+        let streak = 0;
+        for (const day of Object.keys(latest).sort(
+          (a, b) => new Date(b) - new Date(a),
+        )) {
+          const status = latest[day][name];
+          if (day === today && !status) continue; // not checked in yet today: don't break
+          if (status !== "出席") break;
+          streak++;
+        }
+        return streak;
+      }
+
+      function renderQuickCard() {
+        const { name, voicePart } = getSavedUser();
+        const quickCard = document.getElementById("quickCard");
+        const formSection = document.getElementById("formSection");
+        if (!name || !voicePart) {
+          quickCard.classList.add("hidden");
+          formSection.classList.remove("hidden");
+          return;
+        }
+        quickCard.classList.remove("hidden");
+        formSection.classList.toggle("hidden", !fullFormOpen);
+        document.getElementById("quickName").textContent = name;
+        document.getElementById("quickVoice").textContent = `(${voicePart})`;
+        if (!dataLoaded) {
+          // Button is usable before records arrive; rank/streak wait for data
+          document.getElementById("quickStreak").textContent = "";
+          return;
+        }
+
+        const todayStr = new Date().toDateString();
+        const todays = globalRecords
+          .filter((r) => new Date(r.timestamp).toDateString() === todayStr)
+          .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        const latest = {};
+        todays.forEach((r) => (latest[r.name] = r));
+        const checkedIn = !!latest[name] && latest[name].status === "出席";
+
+        const quickBtn = document.getElementById("quickBtn");
+        const quickDone = document.getElementById("quickDone");
+        quickBtn.classList.toggle("hidden", checkedIn);
+        quickDone.classList.toggle("hidden", !checkedIn);
+        if (checkedIn) {
+          // Rank by first 出席 time among people still marked 出席
+          const order = [];
+          todays.forEach((r) => {
+            if (
+              r.status === "出席" &&
+              latest[r.name].status === "出席" &&
+              !order.includes(r.name)
+            )
+              order.push(r.name);
+          });
+          const arrived = Object.values(latest).filter(
+            (r) => r.voicePart === voicePart && r.status === "出席",
+          ).length;
+          const total = globalMembers.filter(
+            (m) => m.voicePart === voicePart,
+          ).length;
+          quickDone.innerHTML = "";
+          [
+            "✅ 今天已打卡",
+            `你是今天第 ${order.indexOf(name) + 1} 位`,
+            `${voicePart} 今天已到 ${total ? `${arrived}/${total}` : `${arrived} 人`}`,
+          ].forEach((text, i) => {
+            const p = document.createElement("p");
+            p.className = i === 0 ? "font-bold text-green-700" : "text-sm";
+            p.textContent = text;
+            quickDone.appendChild(p);
+          });
+        }
+
+        const streak = calcStreak(globalRecords, name);
+        document.getElementById("quickStreak").textContent =
+          streak > 0 ? `🔥 已連續出席 ${streak} 次` : "今天開始累積連續出席 🔥";
+      }
+
+      window.toggleFullForm = function () {
+        fullFormOpen = !fullFormOpen;
+        document
+          .getElementById("formSection")
+          .classList.toggle("hidden", !fullFormOpen);
+      };
+
+      window.quickCheckIn = async function () {
+        const { name, voicePart } = getSavedUser();
+        const quickBtn = document.getElementById("quickBtn");
+        quickBtn.disabled = true;
+        quickBtn.textContent = "處理中...";
+        try {
+          await fetch(API_URL, {
+            method: "POST",
+            body: JSON.stringify({ name, voicePart, status: "出席", note: "" }),
+          });
+          showNotification(`打卡成功：${name}`, "success");
+          await fetchData();
+        } catch (error) {
+          showNotification("送出失敗", "error");
+        } finally {
+          quickBtn.disabled = false;
+          quickBtn.textContent = "✅ 我到了";
+        }
+      };
 
       // --- 6. Render Lists (Main View) ---
       function renderList(data) {
