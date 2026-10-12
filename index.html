@@ -465,7 +465,7 @@
         class="bg-gray-100 p-2 text-center text-xs text-gray-500 space-y-0.5 border-t"
       >
         <div>Powered by Google Sheets</div>
-        <div class="text-gray-400">API v5.1 · App v5.3.4</div>
+        <div class="text-gray-400">API v5.1 · App v5.3.5</div>
         <div class="mt-2 flex justify-center items-center gap-4">
           <button
             onclick="exportAttendanceImage()"
@@ -1751,20 +1751,18 @@
         return streak;
       }
 
-      // Since the person's first practice-day record (excluding today): practice days total,
+      // Over every practice day so far (excluding today), for everyone alike: practice days total,
       // days attended, and days they checked in themselves (出席 or 請假, not proxy).
       function calcRates(records, name) {
         const latest = latestByPracticeDay(records);
         const today = new Date().toDateString();
-        const days = Object.keys(latest)
-          .filter((day) => day !== today) // today isn't counted until it's over
-          .sort((a, b) => new Date(a) - new Date(b));
-        const first = days.findIndex((day) => latest[day][name]);
-        if (first < 0) return null;
-        const total = days.length - first;
+        // today isn't counted until it's over
+        const days = Object.keys(latest).filter((day) => day !== today);
+        if (!days.length) return null;
+        const total = days.length;
         let attended = 0;
         let self = 0;
-        days.slice(first).forEach((day) => {
+        days.forEach((day) => {
           const r = latest[day][name];
           if (!r) return;
           if (r.status === "出席") attended++;
