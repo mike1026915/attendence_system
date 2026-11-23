@@ -105,7 +105,7 @@
         <!-- One-tap Check-in (shown when name is remembered) -->
         <div id="quickCard" class="hidden p-6 pb-2">
           <div
-            class="rounded-xl border-2 border-green-200 bg-green-50 p-4 text-center"
+            class="rounded-xl border-2 border-blue-200 bg-blue-50 p-4 text-center"
           >
             <p class="text-gray-700">
               嗨，<b id="quickName"></b>
@@ -115,7 +115,7 @@
               id="quickBtn"
               type="button"
               onclick="quickCheckIn('出席', this)"
-              class="mt-3 w-full bg-green-600 hover:bg-green-700 text-white text-xl font-bold py-4 rounded-lg shadow-md disabled:opacity-50"
+              class="mt-3 w-full bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold py-4 rounded-lg shadow-md disabled:opacity-50"
             >
               ✅ 出席
             </button>
@@ -123,7 +123,7 @@
               id="quickLeaveBtn"
               type="button"
               onclick="quickCheckIn('請假', this)"
-              class="mt-2 w-full bg-white hover:bg-red-50 text-red-600 border-2 border-red-200 font-bold py-2 rounded-lg disabled:opacity-50"
+              class="mt-2 w-full bg-white hover:bg-orange-50 text-orange-600 border-2 border-orange-200 font-bold py-2 rounded-lg disabled:opacity-50"
             >
               請假
             </button>
@@ -202,12 +202,12 @@
               <!-- Manual Input (Hidden by default) -->
               <div id="manualNameContainer" class="hidden">
                 <input
-                  class="shadow appearance-none border rounded w-full py-3 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-green-500 border-green-500"
+                  class="shadow appearance-none border rounded w-full py-3 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 border-blue-500"
                   id="manualNameInput"
                   type="text"
                   placeholder="請輸入您的花名"
                 />
-                <p class="text-xs text-green-600 mt-1">
+                <p class="text-xs text-blue-600 mt-1">
                   * 您選擇了手動輸入，請填寫姓名
                 </p>
               </div>
@@ -229,7 +229,7 @@
                     onchange="handleStatusChange()"
                   />
                   <div
-                    class="rounded-md border-2 border-gray-200 p-3 text-center peer-checked:border-green-500 peer-checked:bg-green-50 peer-checked:text-green-700 transition-all hover:bg-gray-50"
+                    class="rounded-md border-2 border-gray-200 p-3 text-center peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-700 transition-all hover:bg-gray-50"
                   >
                     <i class="fas fa-check-circle block mb-1 text-xl"></i>
                     <span class="text-sm font-bold">出席</span>
@@ -244,7 +244,7 @@
                     onchange="handleStatusChange()"
                   />
                   <div
-                    class="rounded-md border-2 border-gray-200 p-3 text-center peer-checked:border-red-500 peer-checked:bg-red-50 peer-checked:text-red-700 transition-all hover:bg-gray-50"
+                    class="rounded-md border-2 border-gray-200 p-3 text-center peer-checked:border-orange-500 peer-checked:bg-orange-50 peer-checked:text-orange-700 transition-all hover:bg-gray-50"
                   >
                     <i class="fas fa-times-circle block mb-1 text-xl"></i>
                     <span class="text-sm font-bold">請假</span>
@@ -340,13 +340,13 @@
           class="bg-white p-4 rounded-lg shadow-sm mb-6 border-l-4 border-blue-500 flex justify-around text-center"
         >
           <div>
-            <div class="text-2xl font-bold text-green-600" id="totalAttend">
+            <div class="text-2xl font-bold text-blue-600" id="totalAttend">
               0
             </div>
             <div class="text-xs text-gray-500">出席</div>
           </div>
           <div>
-            <div class="text-2xl font-bold text-red-600" id="totalLeave">0</div>
+            <div class="text-2xl font-bold text-orange-600" id="totalLeave">0</div>
             <div class="text-xs text-gray-500">請假</div>
           </div>
         </div>
@@ -681,13 +681,13 @@
 
           const allPresentBtn = document.createElement("button");
           allPresentBtn.className =
-            "text-[10px] px-2 py-0.5 rounded bg-green-100 text-green-700 hover:bg-green-200 font-bold";
+            "text-[10px] px-2 py-0.5 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 font-bold";
           allPresentBtn.textContent = "全出席";
           allPresentBtn.onclick = () => setGroupStatus(vp, "出席");
 
           const allLeaveBtn = document.createElement("button");
           allLeaveBtn.className =
-            "text-[10px] px-2 py-0.5 rounded bg-red-100 text-red-700 hover:bg-red-200 font-bold";
+            "text-[10px] px-2 py-0.5 rounded bg-orange-100 text-orange-700 hover:bg-orange-200 font-bold";
           allLeaveBtn.textContent = "全請假";
           allLeaveBtn.onclick = () => setGroupStatus(vp, "請假");
 
@@ -727,7 +727,7 @@
             const nameText = escapeHtml(name);
             if (existingStatus) {
               const badge =
-                existingStatus === "出席" ? "text-green-600" : "text-red-600";
+                existingStatus === "出席" ? "text-blue-600" : "text-orange-600";
               nameSpan.innerHTML = `${nameText} <span class="text-[10px] ${badge}">(${existingStatus})</span>`;
             } else {
               nameSpan.textContent = nameText;
@@ -769,15 +769,15 @@
 
         if (statusValue === "出席") {
           btn.classList.add(
-            "border-green-300",
-            "text-green-400",
-            "hover:bg-green-50",
+            "border-blue-300",
+            "text-blue-400",
+            "hover:bg-blue-50",
           );
         } else if (statusValue === "請假") {
           btn.classList.add(
-            "border-red-300",
-            "text-red-400",
-            "hover:bg-red-50",
+            "border-orange-300",
+            "text-orange-400",
+            "hover:bg-orange-50",
           );
         } else {
           btn.classList.add(
@@ -818,22 +818,22 @@
         Array.from(toggleDiv.children).forEach((btn) => {
           const btnStatus = btn.dataset.status;
           btn.classList.remove(
-            "bg-green-500",
+            "bg-blue-500",
             "text-white",
-            "border-green-500",
-            "bg-red-500",
-            "border-red-500",
+            "border-blue-500",
+            "bg-orange-500",
+            "border-orange-500",
             "bg-gray-200",
             "text-gray-600",
             "border-gray-400",
-            "bg-green-50",
-            "bg-red-50",
+            "bg-blue-50",
+            "bg-orange-50",
             "bg-gray-50",
-            "text-green-400",
-            "text-red-400",
+            "text-blue-400",
+            "text-orange-400",
             "text-gray-400",
-            "border-green-300",
-            "border-red-300",
+            "border-blue-300",
+            "border-orange-300",
             "border-gray-300",
             "scale-110",
             "shadow-md",
@@ -842,17 +842,17 @@
           if (btnStatus === activeStatus) {
             if (btnStatus === "出席") {
               btn.classList.add(
-                "bg-green-500",
+                "bg-blue-500",
                 "text-white",
-                "border-green-500",
+                "border-blue-500",
                 "scale-110",
                 "shadow-md",
               );
             } else if (btnStatus === "請假") {
               btn.classList.add(
-                "bg-red-500",
+                "bg-orange-500",
                 "text-white",
-                "border-red-500",
+                "border-orange-500",
                 "scale-110",
                 "shadow-md",
               );
@@ -867,15 +867,15 @@
           } else {
             if (btnStatus === "出席") {
               btn.classList.add(
-                "border-green-300",
-                "text-green-400",
-                "hover:bg-green-50",
+                "border-blue-300",
+                "text-blue-400",
+                "hover:bg-blue-50",
               );
             } else if (btnStatus === "請假") {
               btn.classList.add(
-                "border-red-300",
-                "text-red-400",
-                "hover:bg-red-50",
+                "border-orange-300",
+                "text-orange-400",
+                "hover:bg-orange-50",
               );
             } else {
               btn.classList.add(
@@ -1078,7 +1078,7 @@
         } catch (error) {
           console.error("Error:", error);
           recordList.innerHTML =
-            '<p class="text-red-500 text-center text-sm">連線錯誤</p>';
+            '<p class="text-orange-500 text-center text-sm">連線錯誤</p>';
           btnText.textContent = "連線失敗";
         } finally {
           loadingList.classList.add("hidden");
@@ -1303,24 +1303,24 @@
 
           // Attend stat
           const attendDiv = document.createElement("div");
-          attendDiv.className = "bg-green-50 rounded p-1";
+          attendDiv.className = "bg-blue-50 rounded p-1";
           const attendValue = document.createElement("div");
-          attendValue.className = "font-bold text-green-700";
+          attendValue.className = "font-bold text-blue-700";
           attendValue.textContent = data.attend;
           const attendLabel = document.createElement("div");
-          attendLabel.className = "text-[10px] text-green-600";
+          attendLabel.className = "text-[10px] text-blue-600";
           attendLabel.textContent = "出席";
           attendDiv.appendChild(attendValue);
           attendDiv.appendChild(attendLabel);
 
           // Leave stat
           const leaveDiv = document.createElement("div");
-          leaveDiv.className = "bg-red-50 rounded p-1";
+          leaveDiv.className = "bg-orange-50 rounded p-1";
           const leaveValue = document.createElement("div");
-          leaveValue.className = "font-bold text-red-700";
+          leaveValue.className = "font-bold text-orange-700";
           leaveValue.textContent = data.leave;
           const leaveLabel = document.createElement("div");
-          leaveLabel.className = "text-[10px] text-red-600";
+          leaveLabel.className = "text-[10px] text-orange-600";
           leaveLabel.textContent = "請假";
           leaveDiv.appendChild(leaveValue);
           leaveDiv.appendChild(leaveLabel);
@@ -1347,19 +1347,21 @@
 
             if (item.status === "出席") {
               badgeClass +=
-                "bg-green-50 border-green-200 text-green-700 font-semibold";
+                "bg-blue-50 border-blue-200 text-blue-700 font-semibold";
             } else if (item.status === "晚到") {
               badgeClass +=
                 "bg-yellow-50 border-yellow-200 text-yellow-700 font-semibold";
             } else if (item.status === "請假") {
               badgeClass +=
-                "bg-red-50 border-red-200 text-red-700 font-semibold";
+                "bg-orange-50 border-orange-200 text-orange-700 font-semibold";
             } else {
               badgeClass += "bg-gray-50 border-gray-200 text-gray-400";
             }
 
             nameBadge.className = badgeClass;
-            nameBadge.textContent = item.name || "";
+            // ponytail: symbol so status isn't color-only (colorblind)
+            const mark = { 出席: "✓ ", 晚到: "⏰ ", 請假: "✕ " }[item.status] || "";
+            nameBadge.textContent = mark + (item.name || "");
             namesList.appendChild(nameBadge);
           });
 
@@ -1474,7 +1476,7 @@
             let rowClass =
               "px-4 py-3 flex justify-between items-center hover:bg-gray-50 transition-colors";
             if (validatedStatus === "請假") {
-              rowClass += " bg-red-50 bg-opacity-30";
+              rowClass += " bg-orange-50 bg-opacity-30";
             } else {
               rowClass += " bg-white";
             }
@@ -1498,13 +1500,13 @@
             // Status text
             const statusTextSpan = document.createElement("span");
             if (validatedStatus === "出席") {
-              statusTextSpan.className = "text-xs text-green-600 font-bold";
+              statusTextSpan.className = "text-xs text-blue-600 font-bold";
               statusTextSpan.textContent = "出席";
             } else if (validatedStatus === "晚到") {
               statusTextSpan.className = "text-xs text-yellow-600 font-bold";
               statusTextSpan.textContent = "晚到";
             } else if (validatedStatus === "請假") {
-              statusTextSpan.className = "text-xs text-red-600 font-bold";
+              statusTextSpan.className = "text-xs text-orange-600 font-bold";
               statusTextSpan.textContent = "請假";
             } else {
               statusTextSpan.className = "text-xs text-gray-400";
@@ -1516,14 +1518,14 @@
             if (validatedStatus === "出席") {
               iconElement = document.createElement("i");
               iconElement.className =
-                "fas fa-check-circle text-green-500 text-lg";
+                "fas fa-check-circle text-blue-500 text-lg";
             } else if (validatedStatus === "晚到") {
               iconElement = document.createElement("i");
               iconElement.className = "fas fa-running text-yellow-500 text-lg";
             } else if (validatedStatus === "請假") {
               iconElement = document.createElement("i");
               iconElement.className =
-                "fas fa-times-circle text-red-500 text-lg";
+                "fas fa-times-circle text-orange-500 text-lg";
             } else {
               iconElement = document.createElement("div");
               iconElement.className =
@@ -1815,7 +1817,7 @@
         if (onLeave) {
           quickDone.innerHTML = "";
           const p = document.createElement("p");
-          p.className = "font-bold text-red-600";
+          p.className = "font-bold text-orange-600";
           p.textContent = "📝 今天已請假";
           quickDone.appendChild(p);
         }
@@ -1844,7 +1846,7 @@
           quickDone.innerHTML = "";
           lines.forEach((text, i) => {
             const p = document.createElement("p");
-            p.className = i === 0 ? "font-bold text-green-700" : "text-sm";
+            p.className = i === 0 ? "font-bold text-blue-700" : "text-sm";
             p.textContent = text;
             quickDone.appendChild(p);
           });
@@ -1939,11 +1941,11 @@
 
           // Determine badge color based on validated status
           let badgeColor = "bg-gray-100 text-gray-800";
-          if (safeStatus === "出席") badgeColor = "bg-green-100 text-green-800";
+          if (safeStatus === "出席") badgeColor = "bg-blue-100 text-blue-800";
           else if (safeStatus === "晚到")
             badgeColor = "bg-yellow-100 text-yellow-800";
           else if (safeStatus === "請假")
-            badgeColor = "bg-red-100 text-red-800";
+            badgeColor = "bg-orange-100 text-orange-800";
 
           // Create DOM elements safely
           const recordDiv = document.createElement("div");
@@ -2003,8 +2005,8 @@
         notification.textContent = msg;
         notification.className = `p-4 mb-4 text-sm text-center rounded-lg ${
           type === "success"
-            ? "bg-green-100 text-green-700"
-            : "bg-red-100 text-red-700"
+            ? "bg-blue-100 text-blue-700"
+            : "bg-orange-100 text-orange-700"
         }`;
         notification.classList.remove("hidden");
         setTimeout(() => notification.classList.add("hidden"), 3000);
